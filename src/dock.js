@@ -37,29 +37,13 @@ export function initDock(list) {
   const tiles = [...list.querySelectorAll(".mfa-player__thumb")];
   if (tiles.length === 0) return;
 
-  // Coarse pointers have no hover to track, and reduced-motion users opted
-  // out. Both fall back to the plain CSS :hover rules.
-  const fine = matchMedia("(pointer: fine)");
-  const still = matchMedia("(prefers-reduced-motion: reduce)");
-  if (!fine.matches || still.matches) return;
-
   const root = getComputedStyle(document.documentElement);
   const num = (prop, fallback) => {
     const v = parseFloat(root.getPropertyValue(prop));
     return Number.isFinite(v) ? v : fallback;
   };
-  const peak = num("--mfa-dock-peak", PEAK_FALLBACK);
-  const radiusInTiles = num("--mfa-dock-radius", RADIUS_FALLBACK);
 
-  const rest = tiles.map((tile) => (tile.classList.contains("mfa-is-active") ? ACTIVE_REST : 1));
-  const scale = [...rest];
-  const target = [...rest];
-
-  const ring = list.querySelector(".mfa-player__ring");
-  const ringPad = num("--mfa-ring-pad", 4);
-  const label = list.querySelector(".mfa-player__label");
-  const labelGap = num("--mfa-label-gap", 12);
-  let labelIndex = -1; // last title written, so we don't touch the DOM per frame
+  /* --- everything from here to the pointer gate runs on every device --- */
 
   // the "now playing" pair the strip drives
   const player = list.closest(".mfa-player");
@@ -72,10 +56,66 @@ export function initDock(list) {
   for (const tile of tiles) {
     if (tile.dataset.cover) new Image().src = tile.dataset.cover;
   }
+
+  const rest = tiles.map((tile) => (tile.classList.contains("mfa-is-active") ? ACTIVE_REST : 1));
   let activeIndex = Math.max(
     0,
     tiles.findIndex((t) => t.classList.contains("mfa-is-active"))
   );
+  let magnify = false; // true once the hover behaviour below is wired
+
+  // Hover selects. Once the pointer leaves, the last hovered tile stays
+  // active, so the ring parks there rather than snapping back somewhere else.
+  function setActive(i) {
+    if (i < 0 || i === activeIndex) return;
+    activeIndex = i;
+    for (let j = 0; j < tiles.length; j++) {
+      const on = j === i;
+      tiles[j].classList.toggle("mfa-is-active", on);
+      if (on) tiles[j].setAttribute("aria-current", "true");
+      else tiles[j].removeAttribute("aria-current");
+      rest[j] = on ? ACTIVE_REST : 1;
+    }
+
+    const title = tiles[i].dataset.title;
+    if (heading && title) heading.textContent = title;
+    // the dealer loads the artwork onto the incoming layer itself, so the
+    // resting one keeps the outgoing image until the new card covers it
+    dealer.play(tiles[i].dataset.cover, title ? `${title} — album artwork` : "");
+  }
+
+  /* Tap is the only way to change track without a hover, so this is wired
+     before the pointer gate — on touch it is the entire interaction. */
+  list.addEventListener("click", (e) => {
+    const hit = e.target.closest(".mfa-player__thumb");
+    if (!hit) return;
+    setActive(tiles.indexOf(hit));
+    if (magnify) {
+      retarget();
+      kick();
+    }
+  });
+
+  /* --- below here: hover magnification, travelling ring, hover label ---
+     Coarse pointers have no hover to track, and reduced-motion users opted
+     out. Both keep the deck, the tap-to-deal above, and the plain CSS
+     :hover / .mfa-is-active rules. */
+  const fine = matchMedia("(pointer: fine)");
+  const still = matchMedia("(prefers-reduced-motion: reduce)");
+  if (!fine.matches || still.matches) return;
+
+  const peak = num("--mfa-dock-peak", PEAK_FALLBACK);
+  const radiusInTiles = num("--mfa-dock-radius", RADIUS_FALLBACK);
+
+  const scale = [...rest];
+  const target = [...rest];
+
+  const ring = list.querySelector(".mfa-player__ring");
+  const ringPad = num("--mfa-ring-pad", 4);
+  const label = list.querySelector(".mfa-player__label");
+  const labelGap = num("--mfa-label-gap", 12);
+  let labelIndex = -1; // last title written, so we don't touch the DOM per frame
+
   let hoverIndex = null;
   // Continuous position of the ring in tile-index space. Smoothing this
   // rather than the ring's pixel box is what keeps the ring welded to the
@@ -116,26 +156,6 @@ export function initDock(list) {
 
   let pointerX = null; // viewport x, null when the pointer is away
   let frame = 0;
-
-  // Hover selects. Once the pointer leaves, the last hovered tile stays
-  // active, so the ring parks there rather than snapping back somewhere else.
-  function setActive(i) {
-    if (i === activeIndex) return;
-    activeIndex = i;
-    for (let j = 0; j < tiles.length; j++) {
-      const on = j === i;
-      tiles[j].classList.toggle("mfa-is-active", on);
-      if (on) tiles[j].setAttribute("aria-current", "true");
-      else tiles[j].removeAttribute("aria-current");
-      rest[j] = on ? ACTIVE_REST : 1;
-    }
-
-    const title = tiles[i].dataset.title;
-    if (heading && title) heading.textContent = title;
-    // the dealer loads the artwork onto the incoming layer itself, so the
-    // resting one keeps the outgoing image until the new card covers it
-    dealer.play(tiles[i].dataset.cover, title ? `${title} — album artwork` : "");
-  }
 
   function retarget() {
     if (pointerX === null) {
@@ -300,17 +320,8 @@ export function initDock(list) {
   };
   window.addEventListener("resize", onResize);
 
-  // Hover already selects, so this only matters for keyboard activation —
-  // where there's no pointer to have set it.
-  list.addEventListener("click", (e) => {
-    const hit = e.target.closest(".mfa-player__thumb");
-    if (!hit) return;
-    setActive(tiles.indexOf(hit));
-    retarget();
-    kick();
-  });
-
   measure();
+  magnify = true; // the click handler above may now drive retarget/kick
   list.classList.add("mfa-dock-on");
   // paint the rest state once so every tile owns an inline transform from the
   // start — otherwise the first hover hands over from the CSS rules abruptly

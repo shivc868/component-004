@@ -93,7 +93,11 @@ export function createDealer(player) {
   const deck = cards.slice(PILE);
 
   let slots = []; // DECK + 1 entries; the extra one is the off-deck entry slot
-  let awake = false; // graduated sizes while hovering, uniform at rest
+  /* Graduated sizes while the strip is hovered, uniform at rest. On a coarse
+     pointer there is no hover to wake it, so it starts fanned and stays that
+     way — otherwise the deck would sit permanently collapsed into what looks
+     like a single card. */
+  let awake = !matchMedia("(pointer: fine)").matches;
   let z = 0;
   let last = 0;
   const flights = new Map(); // card -> its in-flight timeline
@@ -143,15 +147,41 @@ export function createDealer(player) {
   function settle(instant) {
     deck.forEach((card, i) => {
       card.style.zIndex = String(DECK_Z - i);
-      /* At rest the five cards sit exactly on top of each other, so five drop
-         shadows land on the same pixels and compound into something far
-         darker than one card should cast. Flat kills the drop shadow on all
-         of them and gives it back to the top card alone. */
-      card.classList.toggle("mfa-is-flat", !awake);
-      card.classList.toggle("mfa-is-crown", !awake && i === 0);
       const vars = { ...slotVars(i), opacity: 1 };
       if (instant) gsap.set(card, vars);
       else gsap.to(card, { ...vars, duration: 0.42, ease: SHIFT_EASE, overwrite: true });
+    });
+  }
+
+  /* At rest only the card on show is wanted. The ones buried under it are
+     invisible in themselves — they line up exactly — but their drop shadows
+     are not, and a stack of them on the same pixels compounds into a dark
+     halo around the sleeve. Fading them out leaves one card's worth.
+
+     Two things are exempt. Anything still in the air, which would otherwise
+     vanish mid-flight. And the topmost card that has actually LANDED — that
+     is the one currently on screen, and it has to hold the centre until the
+     incoming card has covered it. Keeping `pile`'s last entry instead would
+     be wrong whenever that entry is still flying: the card under it would
+     fade while nothing had yet arrived to replace it, and the centre would
+     go blank for the length of the flight.
+
+     Every landing re-runs this, which is what finally releases the outgoing
+     card — by then the new one is on top of it. */
+  function trimPile() {
+    if (awake) return;
+
+    let showing = -1;
+    for (let i = pile.length - 1; i >= 0; i--) {
+      if (!flights.has(pile[i])) {
+        showing = i;
+        break;
+      }
+    }
+
+    pile.forEach((card, i) => {
+      if (i === showing || flights.has(card)) return;
+      gsap.to(card, { opacity: 0, duration: 0.3, ease: "power1.out" });
     });
   }
 
@@ -161,6 +191,7 @@ export function createDealer(player) {
     if (on === awake) return;
     awake = on;
     settle(false);
+    trimPile();
   }
 
   function layout() {
@@ -187,8 +218,6 @@ export function createDealer(player) {
     setArt(card, src, alt);
     // dealt cards live above the whole deck band and above each other
     card.style.zIndex = String(DECK_Z + 50 + ++z);
-    // it has left the deck, so it carries its own full shadow again
-    card.classList.remove("mfa-is-flat", "mfa-is-crown");
 
     if (still.matches) {
       gsap.set(card, { x: 0, y: 0, scale: 1, opacity: 1 });
@@ -205,6 +234,7 @@ export function createDealer(player) {
     const gap = last ? now - last : Infinity;
     last = now;
     const dur = gsap.utils.clamp(FLIGHT_MIN, FLIGHT_MAX, (gap / 1000) * PACE);
+
 
     /* Cards have to land in the order they were dealt. Flight time tracks
        hover speed, and the first card of a sweep always gets the longest one
@@ -225,8 +255,15 @@ export function createDealer(player) {
     const prior = flights.get(card);
     if (prior) prior.kill(); // a recycled card may still owe us a landing
     gsap.killTweensOf([card, flipOf(card)]);
+    // it may have been mid-fade from a trim when the pointer came back
+    gsap.set(card, { opacity: 1 });
 
-    const tl = gsap.timeline({ onComplete: () => flights.delete(card) });
+    const tl = gsap.timeline({
+      onComplete: () => {
+        flights.delete(card);
+        trimPile(); // no-op unless the pointer has already left the strip
+      },
+    });
     flights.set(card, tl);
 
     // `.to()` on purpose — if this card was still sliding up a deck slot when

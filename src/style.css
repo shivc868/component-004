@@ -8,27 +8,43 @@
    ========================================================================== */
 
 :root {
-  --mfa-bg: #ffffff;
-  --mfa-ink: #17171a;
-  --mfa-chip: #f1f1f3;
+  /* Palette: deep blue backdrop, near-black surfaces, pale ink. `--mfa-ink`
+     is the foreground of the theme, not a colour name — inverting it and
+     `--mfa-on-ink` is what carries the whole component from light to dark,
+     because the heading, the hover label's pill, the travelling ring, the
+     focus outline and the selection all resolve from that one pair. */
+  --mfa-sky-top: #16283f;
+  --mfa-sky-bottom: #070d17;
+  --mfa-bg: #0c1524; /* surfaces sitting on the sky */
+  --mfa-ink: #e9f1fb; /* pale — headings, the label pill, the ring */
+  --mfa-on-ink: #0a1626; /* dark text sitting on top of that pale pill */
+  --mfa-chip: #1a2942;
 
-  /* Card back. Deliberately paper-light: it sits in the corner permanently
-     and is the first thing the sleeve shows on every flip, so it has to stay
-     quieter than the artwork. */
-  --mfa-card-back: #f2f2f4;
-  --mfa-card-line: rgba(23, 23, 26, 0.1);
-  --mfa-card-mark: rgba(23, 23, 26, 0.55);
+  /* Card back stays paper-light: a real deck has light-backed cards, and on a
+     dark table that is exactly how it should read. These underlay the card
+     back artwork, which is itself pale. */
+  --mfa-card-back: #eaf1fa;
+  --mfa-card-line: rgba(10, 42, 94, 0.12);
 
-  --mfa-sans: "Instrument Sans", "Segoe UI", system-ui, sans-serif;
+  --mfa-sans: "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
 
   /* The artwork is 2:3 portrait, so height is the driving dimension and the
-     width is derived. The `dvh` term is what keeps the whole component on one
-     screen: on a short viewport the sleeve shrinks rather than pushing the
-     timeline below the fold. The outer max() is the floor for narrow phones,
-     where 30vw goes tiny. */
-  --mfa-cover-h: max(240px, min(420px, 30vw, 46vh));
-  --mfa-cover-h: max(240px, min(420px, 30vw, 46dvh));
+     width is derived. Both terms are relative, so the sleeve keeps growing
+     with the screen instead of stopping at a fixed ceiling — `30vw` governs
+     wide-and-short viewports, `46dvh` tall ones, and whichever is scarcer
+     wins. The `dvh` term is also what keeps the component on one screen: on a
+     short viewport the sleeve shrinks rather than pushing the timeline below
+     the fold. The outer max() is the floor for narrow phones, where 30vw
+     goes tiny. */
+  --mfa-cover-h: max(240px, min(30vw, 46vh));
+  --mfa-cover-h: max(240px, min(30vw, 46dvh));
   --mfa-cover-w: calc(var(--mfa-cover-h) * 2 / 3);
+  /* The deck is a small copy of the sleeve, so it is derived from it rather
+     than sized on its own. That keeps the deck-to-sleeve ratio fixed, which
+     matters for the deal: deal.js takes its flight scale from
+     deckWidth / stageWidth, so a constant ratio means the animation looks
+     identical at every screen size. */
+  --mfa-deck-w: max(88px, calc(var(--mfa-cover-w) * 0.46));
   --mfa-thumb: clamp(48px, 4.2vw, 62px);
   /* Dock magnification. `peak` is the scale directly under the cursor;
      `radius` is the falloff reach in item-widths. JS reads both from here so
@@ -38,12 +54,18 @@
   /* gap to the viewport bottom; shared by the strip padding and the ring so
      the two can't drift apart */
   --mfa-strip-bottom: 20px;
-  --mfa-tile-radius: 10px;
+  /* Corner rounding, tighter than a typical card so the artwork stays the
+     shape it was cropped to. The ring derives from the tile value and the
+     deck from the cover one, so these two drive every rounded edge. */
+  --mfa-tile-radius: 6px;
+  --mfa-cover-radius: 12px;
   /* How far outside the tile the travelling ring sits. Border-box sizing
      means the border eats into this, so 5px keeps a ~3px breathing gap
      against the 2px border. */
   --mfa-ring-pad: 5px;
-  --mfa-ring-color: rgba(23, 23, 26, 0.22);
+  /* same navy as the hover label's pill, so the two markers that follow the
+     cursor read as one thing rather than two competing accents */
+  --mfa-ring-color: var(--mfa-ink);
   /* gap between the tile top and the hover label, read by JS */
   --mfa-label-gap: 12px;
   /* headroom the label needs above the peak-scaled tile: the gap plus the
@@ -58,9 +80,26 @@
 }
 
 .mfa-player {
-  color-scheme: light;
+  color-scheme: dark;
   color: var(--mfa-ink);
-  background: var(--mfa-bg);
+  /* The background image is a pale field built for the light theme. Rather
+     than replace it, the dark gradient is multiplied over it: multiply keeps
+     the image's haze structure while pulling it down into deep navy, and
+     unlike a semi-transparent scrim it doesn't lift the blacks or wash the
+     colour out to slate.
+
+     The white background-color is deliberate — it is multiply's identity, so
+     before the image loads the gradient blends against white and paints as
+     itself. Against a dark colour it would multiply down to near-black and
+     then visibly lighten when the image arrived. */
+  background-color: #ffffff;
+  background-image:
+    linear-gradient(180deg, var(--mfa-sky-top) 0%, var(--mfa-sky-bottom) 100%),
+    url("/bg.webp");
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-blend-mode: multiply;
   font-family: var(--mfa-sans);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -83,7 +122,7 @@
 
 .mfa-player ::selection {
   background: var(--mfa-ink);
-  color: var(--mfa-bg);
+  color: var(--mfa-on-ink);
 }
 
 /* ------------------------------------------------------------- heading -- */
@@ -93,10 +132,12 @@
      heading and sleeve centre together as one group */
   margin: auto 0 0;
   font-size: clamp(26px, 3.2vw, 42px);
-  font-weight: 600;
+  /* the reference sets its headings heavy, so 700 rather than 600 */
+  font-weight: 700;
   line-height: 1.05;
-  /* tight tracking — optical correction for display sizes */
-  letter-spacing: -0.045em;
+  /* Eased off from -0.045em: Plus Jakarta Sans has wider, rounder bowls than
+     Instrument Sans and starts to collide on double letters at that value. */
+  letter-spacing: -0.032em;
   text-align: center;
   color: var(--mfa-ink);
 }
@@ -109,60 +150,23 @@
    the centred heading + sleeve group. */
 .mfa-player__anchor {
   position: absolute;
-  top: clamp(16px, 3vh, 30px);
-  right: clamp(16px, 2.5vw, 38px);
-  width: clamp(96px, 9vw, 132px);
+  top: 10px;
+  right: 10px;
+  width: var(--mfa-deck-w);
   aspect-ratio: 2 / 3;
   visibility: hidden;
   pointer-events: none;
 }
 
-/* The card back. Sized in % throughout so the one design holds at every scale
-   — deck-sized in the corner, and full-sized once dealt. */
+/* The card back. One 848x1264 artwork carrying the hatch, the inset frame and
+   the monogram — everything that used to be built from gradients and a
+   pseudo-element here. The 2:3 source matches the card box exactly, so
+   `cover` crops nothing. `--mfa-card-back` stays as the paint underneath, so
+   the card is never a blank hole while the image is still loading. */
 .mfa-player__cover-back {
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-  /* Paper, not ink. A solid black back was the heaviest mass on an otherwise
-     white page and pulled the eye off the artwork. Fine hatch over a soft
-     top-lit wash reads as a card back without carrying any weight. */
   background:
-    repeating-linear-gradient(
-      -45deg,
-      rgba(23, 23, 26, 0.03) 0 1px,
-      transparent 1px 8px
-    ),
-    radial-gradient(130% 100% at 50% 0%, #fcfcfd 0%, var(--mfa-card-back) 72%);
-}
-
-/* inset frame, the way a playing card is bordered */
-.mfa-player__cover-back::before {
-  content: "";
-  position: absolute;
-  inset: 6.5%;
-  border: 1px solid var(--mfa-card-line);
-  border-radius: 5px;
-  pointer-events: none;
-}
-
-.mfa-player__monogram {
-  display: grid;
-  place-items: center;
-  width: 40%;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  border: 1px solid var(--mfa-card-line);
-  font-size: 15px;
-  font-weight: 500;
-  letter-spacing: 0.02em;
-  color: var(--mfa-card-mark);
-}
-
-/* Every card carries this size; at deck scale (~0.45) it lands around 14px,
-   which is why the base rule above is tuned to 15px. The card never restyles
-   itself as it grows — it is only ever scaled. */
-.mfa-player__monogram--lg {
-  font-size: clamp(26px, 3vw, 38px);
+    url("/card-back.webp") center / cover no-repeat,
+    var(--mfa-card-back);
 }
 
 /* --------------------------------------------------------------- cover -- */
@@ -212,43 +216,24 @@
   will-change: transform;
 }
 
+/* No drop shadow on either face. The centre holds a stack of cards landing on
+   identical pixels, so every shadow compounded with the ones beneath it into
+   a dark halo around the sleeve — the artwork reads cleaner without any. */
 .mfa-player__cover,
 .mfa-player__cover-back {
   position: absolute;
   inset: 0;
   margin: 0;
-  border-radius: 18px;
+  border-radius: var(--mfa-cover-radius);
   overflow: hidden;
   /* without this both faces render at once and the back shows through */
   backface-visibility: hidden;
-  box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.06),
-    0 18px 40px -18px rgba(0, 0, 0, 0.28);
 }
 
-/* The back is paper-light, so it needs a hairline to hold an edge against the
-   white page. The artwork front defines its own edge. Declared after the
-   shared rule above, which would otherwise overwrite the shadow. */
+/* The back is paper-light, so it still needs a hairline to hold an edge. The
+   artwork front defines its own. */
 .mfa-player__cover-back {
-  box-shadow:
-    inset 0 0 0 1px var(--mfa-card-line),
-    0 1px 2px rgba(0, 0, 0, 0.06),
-    0 18px 40px -18px rgba(0, 0, 0, 0.28);
-  transition: box-shadow 0.35s ease;
-}
-
-/* Deck at rest: the five cards land on exactly the same pixels, so five drop
-   shadows stack and read far darker than one card should. Strip the drop
-   shadow off every card... */
-.mfa-player__layer.mfa-is-flat .mfa-player__cover-back {
   box-shadow: inset 0 0 0 1px var(--mfa-card-line);
-}
-
-/* ...and give a single soft one back to the card on top. */
-.mfa-player__layer.mfa-is-crown .mfa-player__cover-back {
-  box-shadow:
-    inset 0 0 0 1px var(--mfa-card-line),
-    0 4px 14px -10px rgba(0, 0, 0, 0.25);
 }
 
 .mfa-player__cover {
@@ -268,12 +253,6 @@
 }
 
 /* ---------------------------------------------------------- timeline -- */
-
-.mfa-player__timeline {
-  width: 100%;
-  /* No spacing of its own — the strip's own padding-top already carries the
-     dock headroom, and any extra here would push the sleeve off centre. */
-}
 
 .mfa-player__track-list {
   display: flex;
@@ -390,7 +369,7 @@
   padding: 7px 13px;
   border-radius: 8px;
   background: var(--mfa-ink);
-  color: var(--mfa-bg);
+  color: var(--mfa-on-ink);
   font-size: 14px;
   font-weight: 500;
   line-height: 1.2;
@@ -429,8 +408,43 @@
 
 /* ---------------------------------------------------------- responsive -- */
 
-/* No width breakpoints needed: the vertical rhythm is vh-clamped and the type
-   sizes are vw-clamped, so everything collapses on its own. */
+/* ------------------------------------------------------------- mobile -- */
+
+/* On a phone the shared sizing leaves the sleeve tiny and the screen mostly
+   empty: `30vw` is the scarcer term at this width, so it wins the min() and
+   collapses onto the 240px floor no matter how much height is going spare.
+
+   Here width drives it instead (`117vw` of height = 78vw of width) and height
+   only caps it. The cap is `100dvh - 340px`, not a dvh fraction, because what
+   the sleeve competes with — the deck reserve, heading, gap and strip — is a
+   fixed pixel stack, so a proportional cap over- or under-shoots depending on
+   phone height. */
+@media (max-width: 640px) {
+  :root {
+    --mfa-deck-w: 72px;
+    --mfa-cover-h: max(200px, min(117vw, calc(100vh - 340px)));
+    --mfa-cover-h: max(200px, min(117vw, calc(100dvh - 340px)));
+  }
+
+  /* Reserve the deck's full height at the top. The sleeve is centred and the
+     deck is hard against the right edge, so on a narrow screen their boxes
+     overlap horizontally — starting the column below the deck is what
+     guarantees they can never collide, at any phone size. */
+  .mfa-player {
+    padding-top: calc(10px + var(--mfa-deck-w) * 1.5 + 14px);
+  }
+
+  /* Bottom-align rather than centre. Dropping the stage's auto bottom margin
+     leaves the heading's auto top margin as the only one, so all the free
+     height collects above the pair and the sleeve sits directly over the
+     strip. On a phone that matters twice over: it buys the most possible
+     clearance from the corner deck, and a card in mid-flight is at its
+     largest around the middle of the screen — which is exactly the band this
+     empties out. */
+  .mfa-player__stage {
+    margin-bottom: 0;
+  }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .mfa-player *,

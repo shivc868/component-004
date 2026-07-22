@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400..800&display=swap"
       rel="stylesheet"
     />
     <title>component-004</title>
@@ -36,16 +36,14 @@
                   alt="So Long — album artwork"
                 />
               </figure>
-              <div class="mfa-player__cover-back" aria-hidden="true">
-                <span class="mfa-player__monogram mfa-player__monogram--lg">A</span>
-              </div>
+              <!-- the whole back design is one image; see style.css -->
+              <div class="mfa-player__cover-back" aria-hidden="true"></div>
             </div>
           </div>
         </div>
 
         <!-- timeline -->
-        <div class="mfa-player__timeline">
-          <ul class="mfa-player__track-list">
+        <ul class="mfa-player__track-list">
             <!-- The travelling ring and label. Both are <li> because <ul> only
                  accepts <li> children, but they're absolutely positioned so
                  they sit outside the flex flow, and hidden from AT since the
@@ -194,8 +192,7 @@
                 <img src="https://picsum.photos/seed/mfa-t14/300/300" alt="Ember" />
               </button>
             </li>
-          </ul>
-        </div>
+        </ul>
       </section>
     </div>
     <script type="module" src="/src/main.js"></script>
