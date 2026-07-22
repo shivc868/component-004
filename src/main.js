@@ -5,6 +5,7 @@ import gsap from "gsap";
 import { SplitText } from "gsap/SplitText";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
+import { initDock } from "./dock.js";
 
 // registering twice is harmless — safe even if the host site registers too
 gsap.registerPlugin(SplitText, ScrollTrigger);
@@ -29,3 +30,5 @@ if (SMOOTH_SCROLL && !window.lenis) {
   gsap.ticker.add((time) => lenis.raf(time * 1000));
   gsap.ticker.lagSmoothing(0);
 }
+
+initDock(document.querySelector(".mfa-player__track-list"));

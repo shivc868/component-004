@@ -14,22 +14,33 @@
 
   --mfa-sans: "Instrument Sans", "Segoe UI", system-ui, sans-serif;
 
-  /* One knob drives cover, disc and every offset below. The `dvh` term is
-     what keeps the whole component on one screen: on a short viewport the
-     sleeve shrinks rather than pushing the timeline below the fold. The
-     outer max() is the floor for narrow phones, where 26vw goes tiny. */
-  --mfa-cover: max(200px, min(372px, 26vw, 44vh));
-  --mfa-cover: max(200px, min(372px, 26vw, 44dvh));
-  --mfa-thumb: clamp(56px, 5vw, 72px);
+  /* The `dvh` term is what keeps the whole component on one screen: on a
+     short viewport the sleeve shrinks rather than pushing the timeline below
+     the fold. The outer max() is the floor for narrow phones, where 22vw
+     goes tiny. */
+  --mfa-cover: max(180px, min(320px, 22vw, 36vh));
+  --mfa-cover: max(180px, min(320px, 22vw, 36dvh));
+  --mfa-thumb: clamp(48px, 4.2vw, 62px);
   /* Dock magnification. `peak` is the scale directly under the cursor;
      `radius` is the falloff reach in item-widths. JS reads both from here so
      the headroom reserved above the strip always matches the real peak. */
   --mfa-dock-peak: 1.6;
   --mfa-dock-radius: 2.6;
-  /* How far the disc slides out from behind the sleeve, as a % of its own
-     width. 21% puts the disc's right edge ~65px past a 372px sleeve, which
-     matches the reference. This is the value to animate for the slide-out. */
-  --mfa-disc-out: 21%;
+  /* gap to the viewport bottom; shared by the strip padding and the ring so
+     the two can't drift apart */
+  --mfa-strip-bottom: 20px;
+  --mfa-tile-radius: 10px;
+  /* How far outside the tile the travelling ring sits. Border-box sizing
+     means the border eats into this, so 5px keeps a ~3px breathing gap
+     against the 2px border. */
+  --mfa-ring-pad: 5px;
+  --mfa-ring-color: rgba(23, 23, 26, 0.22);
+  /* gap between the tile top and the hover label, read by JS */
+  --mfa-label-gap: 12px;
+  /* headroom the label needs above the peak-scaled tile: the gap plus the
+     label's own height. Folded into the strip's padding-top, since the
+     scroll container would otherwise clip it. */
+  --mfa-label-room: 52px;
 }
 
 .mfa-player,
@@ -52,11 +63,11 @@
   align-items: center;
   min-height: 100vh;
   min-height: 100dvh;
-  /* no bottom padding — the strip's own 10px padding is the gap to the edge */
+  /* no bottom padding — the strip's own padding is the gap to the edge */
   padding: clamp(18px, 3vh, 28px) 0 0;
-  /* the disc sticks out past the stage box — clip so it can never add
-     horizontal page scroll (which would knock the centred column sideways).
-     `clip` not `hidden`: it doesn't create a scroll container. */
+  /* insurance: nothing should escape sideways, and a stray horizontal
+     scrollbar would knock the centred column off-axis. `clip` not `hidden`,
+     so it doesn't become a scroll container. */
   overflow-x: clip;
 }
 
@@ -68,7 +79,9 @@
 /* ------------------------------------------------------------- heading -- */
 
 .mfa-player__heading {
-  margin: 0;
+  /* auto top margin — pairs with the stage's auto bottom margin so the
+     heading and sleeve centre together as one group */
+  margin: auto 0 0;
   font-size: clamp(26px, 3.2vw, 42px);
   font-weight: 600;
   line-height: 1.05;
@@ -78,18 +91,21 @@
   color: var(--mfa-ink);
 }
 
-/* ----------------------------------------------------- cover + cd disc -- */
+/* --------------------------------------------------------------- cover -- */
 
 .mfa-player__stage {
   position: relative;
   width: var(--mfa-cover);
   aspect-ratio: 1;
-  margin-top: clamp(20px, 4vh, 44px);
+  /* Fixed gap under the heading, auto below. The free height splits between
+     this auto margin and the heading's auto top margin, so the pair centres
+     as one block and the strip stays pinned to the bottom. The timeline must
+     have no auto margin of its own — a third one would split the free space
+     three ways and lift the group. */
+  margin: clamp(16px, 3vh, 30px) 0 auto;
 }
 
 .mfa-player__cover {
-  position: relative;
-  z-index: 2;
   margin: 0;
   width: 100%;
   height: 100%;
@@ -108,82 +124,12 @@
   object-fit: cover;
 }
 
-/* The disc sits behind the sleeve and pokes out on the right. Kept on a
-   transform so it can be slid in/out later without touching layout. */
-.mfa-player__disc {
-  position: absolute;
-  z-index: 1;
-  top: 50%;
-  left: 50%;
-  width: 95%;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  transform: translate(-50%, -50%) translateX(var(--mfa-disc-out));
-  background:
-    /* faint pressing rings */
-    repeating-radial-gradient(
-      circle at 50% 50%,
-      rgba(0, 0, 0, 0.02) 0 2px,
-      rgba(255, 255, 255, 0.03) 2px 4px
-    ),
-    /* iridescence */
-      conic-gradient(
-        from 205deg,
-        #e9eef2,
-        #f7e9f1,
-        #eaf2ec,
-        #f4f1e4,
-        #e6eef6,
-        #f2e8f3,
-        #e9eef2
-      ),
-    #eef2f5;
-  box-shadow:
-    inset 0 0 0 1px rgba(0, 0, 0, 0.05),
-    0 14px 30px -16px rgba(0, 0, 0, 0.35);
-  will-change: transform;
-}
-
-/* soft directional gloss across the platter */
-.mfa-player__disc-sheen {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background: linear-gradient(
-    118deg,
-    rgba(255, 255, 255, 0) 30%,
-    rgba(255, 255, 255, 0.65) 48%,
-    rgba(255, 255, 255, 0) 62%
-  );
-  pointer-events: none;
-}
-
-/* clamping ring + spindle hole */
-.mfa-player__disc-hub {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 23%;
-  aspect-ratio: 1;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  background:
-    radial-gradient(
-      circle at 50% 50%,
-      var(--mfa-bg) 0 30%,
-      rgba(0, 0, 0, 0.08) 30% 32%,
-      rgba(255, 255, 255, 0.55) 32% 62%,
-      rgba(0, 0, 0, 0.06) 62% 64%,
-      transparent 64%
-    );
-}
-
 /* ---------------------------------------------------------- timeline -- */
 
 .mfa-player__timeline {
   width: 100%;
-  margin-top: auto; /* absorbs leftover height, pinning the strip to the base */
-  padding-top: clamp(24px, 5vh, 56px);
+  /* No spacing of its own — the strip's own padding-top already carries the
+     dock headroom, and any extra here would push the sleeve off centre. */
 }
 
 .mfa-player__track-list {
@@ -203,8 +149,10 @@
      magnification headroom: scaling is a transform, so layout height stays
      at --mfa-thumb and the grown tile would be clipped by the scroll
      container. Origin is bottom centre, so all growth is upward. */
-  padding: calc(var(--mfa-thumb) * (var(--mfa-dock-peak) - 1) + 10px) 20px 20px;
+  padding: calc(var(--mfa-thumb) * (var(--mfa-dock-peak) - 1) + var(--mfa-label-room)) 20px
+    var(--mfa-strip-bottom);
   list-style: none;
+  position: relative; /* containing block for the travelling ring */
   overflow-x: auto;
   overflow-y: hidden;
   overscroll-behavior-x: contain;
@@ -225,7 +173,7 @@
   height: var(--mfa-thumb);
   padding: 0;
   border: 0;
-  border-radius: 10px;
+  border-radius: var(--mfa-tile-radius);
   overflow: hidden;
   background: var(--mfa-chip);
   cursor: pointer;
@@ -249,13 +197,74 @@
   transform: translateY(-3px);
 }
 
-/* white gap + dark ring, drawn outside the tile so it never crops the art */
+/* No-JS / coarse-pointer fallback: the ring is baked onto the active tile as
+   a box-shadow. In dock mode the travelling ring element replaces it. */
 .mfa-player__thumb.mfa-is-active {
   opacity: 1;
   transform: scale(1.1);
   box-shadow:
     0 0 0 3px var(--mfa-bg),
     0 0 0 4px var(--mfa-ink);
+}
+
+/* ------------------------------------------------------ travelling ring -- */
+
+/* One ring for the whole strip. JS sizes and positions it each frame onto
+   whichever tile has focus — the hovered one, or the active one when the
+   pointer is away. `bottom` is derived from the strip padding so it stays
+   pinned to the tile baseline while tiles grow upward. */
+.mfa-player__ring {
+  position: absolute;
+  left: 0;
+  bottom: calc(var(--mfa-strip-bottom) - var(--mfa-ring-pad));
+  width: 0;
+  height: 0;
+  border: 2px solid var(--mfa-ring-color);
+  border-radius: calc(var(--mfa-tile-radius) + var(--mfa-ring-pad));
+  pointer-events: none;
+  opacity: 0;
+  /* The tiles carry an inline `transform`, which makes each one a stacking
+     context painted in DOM order — so without this the ring (first child)
+     renders underneath them. */
+  z-index: 2;
+}
+
+.mfa-dock-on .mfa-player__ring {
+  opacity: 1;
+}
+
+/* --------------------------------------------------------- hover label -- */
+
+/* Sits on the same baseline as the tiles, then JS lifts it clear of whichever
+   tile has focus with a translateY — so it rides the tile as it grows rather
+   than sitting at a fixed height. The X translate uses a -50% term so it
+   self-centres without JS having to measure the text. */
+.mfa-player__label {
+  position: absolute;
+  left: 0;
+  bottom: var(--mfa-strip-bottom);
+  z-index: 3;
+  padding: 7px 13px;
+  border-radius: 8px;
+  background: var(--mfa-ink);
+  color: var(--mfa-bg);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+
+.mfa-player__label.mfa-is-on {
+  opacity: 1;
+}
+
+/* the travelling ring takes over, so drop the baked-on one */
+.mfa-dock-on .mfa-player__thumb.mfa-is-active {
+  box-shadow: none;
 }
 
 .mfa-player__thumb:focus-visible {
