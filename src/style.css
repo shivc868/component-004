@@ -14,12 +14,14 @@
 
   --mfa-sans: "Instrument Sans", "Segoe UI", system-ui, sans-serif;
 
-  /* The `dvh` term is what keeps the whole component on one screen: on a
-     short viewport the sleeve shrinks rather than pushing the timeline below
-     the fold. The outer max() is the floor for narrow phones, where 22vw
-     goes tiny. */
-  --mfa-cover: max(180px, min(320px, 22vw, 36vh));
-  --mfa-cover: max(180px, min(320px, 22vw, 36dvh));
+  /* The artwork is 2:3 portrait, so height is the driving dimension and the
+     width is derived. The `dvh` term is what keeps the whole component on one
+     screen: on a short viewport the sleeve shrinks rather than pushing the
+     timeline below the fold. The outer max() is the floor for narrow phones,
+     where 30vw goes tiny. */
+  --mfa-cover-h: max(240px, min(420px, 30vw, 46vh));
+  --mfa-cover-h: max(240px, min(420px, 30vw, 46dvh));
+  --mfa-cover-w: calc(var(--mfa-cover-h) * 2 / 3);
   --mfa-thumb: clamp(48px, 4.2vw, 62px);
   /* Dock magnification. `peak` is the scale directly under the cursor;
      `radius` is the falloff reach in item-widths. JS reads both from here so
@@ -61,6 +63,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  position: relative; /* containing block for the corner card */
   min-height: 100vh;
   min-height: 100dvh;
   /* no bottom padding — the strip's own padding is the gap to the edge */
@@ -91,12 +94,40 @@
   color: var(--mfa-ink);
 }
 
+/* ---------------------------------------------------------- corner card -- */
+
+/* Out of flow, so it never disturbs the centred heading + sleeve group. */
+.mfa-player__card {
+  position: absolute;
+  top: clamp(16px, 3vh, 30px);
+  right: clamp(16px, 2.5vw, 38px);
+  z-index: 4;
+  width: clamp(96px, 9vw, 132px);
+  /* no padding or background — the card box is the image box, so the shadow
+     hugs the artwork instead of ringing an invisible frame around it */
+  border-radius: 10px;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.05),
+    0 14px 30px -16px rgba(0, 0, 0, 0.3);
+}
+
+.mfa-player__card-img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border-radius: inherit;
+  background: var(--mfa-chip);
+}
+
 /* --------------------------------------------------------------- cover -- */
 
 .mfa-player__stage {
-  position: relative;
-  width: var(--mfa-cover);
-  aspect-ratio: 1;
+  /* both dimensions stated outright rather than leaning on aspect-ratio —
+     a flex item sizing its cross axis off a ratio is the kind of thing
+     browsers disagree about */
+  height: var(--mfa-cover-h);
+  width: var(--mfa-cover-w);
   /* Fixed gap under the heading, auto below. The free height splits between
      this auto margin and the heading's auto top margin, so the pair centres
      as one block and the strip stays pinned to the bottom. The timeline must
