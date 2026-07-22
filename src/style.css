@@ -41,7 +41,7 @@
   --mfa-cover-w: calc(var(--mfa-cover-h) * 2 / 3);
   /* The deck is a small copy of the sleeve, so it is derived from it rather
      than sized on its own. That keeps the deck-to-sleeve ratio fixed, which
-     matters for the deal: deal.js takes its flight scale from
+     matters for the deal: main.js takes its flight scale from
      deckWidth / stageWidth, so a constant ratio means the animation looks
      identical at every screen size. */
   --mfa-deck-w: max(88px, calc(var(--mfa-cover-w) * 0.46));
@@ -144,7 +144,7 @@
 
 /* ---------------------------------------------------------- corner deck -- */
 
-/* Geometry only, never painted. deal.js measures this to work out where the
+/* Geometry only, never painted. main.js measures this to work out where the
    deck slots are, which keeps the deck's position and size in CSS while the
    cards themselves are transformed by JS. Out of flow, so it doesn't disturb
    the centred heading + sleeve group. */
@@ -179,7 +179,7 @@
   width: var(--mfa-cover-w);
   position: relative; /* stacking context for the two card layers */
   /* Perspective lives here because the stage is the one box in this subtree
-     that is never transformed — which also makes it safe for deal.js to
+     that is never transformed — which also makes it safe for main.js to
      measure the flight distance from. */
   perspective: 1400px;
   /* Fixed gap under the heading, auto below. The free height splits between
@@ -190,7 +190,7 @@
   margin: clamp(16px, 3vh, 30px) 0 auto;
 }
 
-/* A pool of these is cloned by deal.js: five parked on the corner anchor as
+/* A pool of these is cloned by main.js: five parked on the corner anchor as
    the deck, the rest stacked at centre. Absolute so they stack, and
    preserve-3d is required or a layer's own 2D transform would flatten the
    flip nested inside it. */
