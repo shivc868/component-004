@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PLAYER COMPONENT — this is the file you copy into your project
+   CARDS COMPONENT — this is the file you copy into your project
    --------------------------------------------------------------------------
    Every class, state class and design token is namespaced with `mfa-` /
    `--mfa-` so nothing here can collide with the styles already on your site.
@@ -33,7 +33,7 @@
      with the screen instead of stopping at a fixed ceiling — `30vw` governs
      wide-and-short viewports, `46dvh` tall ones, and whichever is scarcer
      wins. The `dvh` term is also what keeps the component on one screen: on a
-     short viewport the sleeve shrinks rather than pushing the timeline below
+     short viewport the sleeve shrinks rather than pushing the dock below
      the fold. The outer max() is the floor for narrow phones, where 30vw
      goes tiny. */
   --mfa-cover-h: max(240px, min(30vw, 46vh));
@@ -74,12 +74,12 @@
   --mfa-label-room: 52px;
 }
 
-.mfa-player,
-.mfa-player * {
+.mfa-cards,
+.mfa-cards * {
   box-sizing: border-box;
 }
 
-.mfa-player {
+.mfa-cards {
   color-scheme: dark;
   color: var(--mfa-ink);
   /* The background image is a pale field built for the light theme. Rather
@@ -120,14 +120,14 @@
   overflow-x: clip;
 }
 
-.mfa-player ::selection {
+.mfa-cards ::selection {
   background: var(--mfa-ink);
   color: var(--mfa-on-ink);
 }
 
 /* ------------------------------------------------------------- heading -- */
 
-.mfa-player__heading {
+.mfa-cards__title {
   /* auto top margin — pairs with the stage's auto bottom margin so the
      heading and sleeve centre together as one group */
   margin: auto 0 0;
@@ -148,7 +148,7 @@
    deck slots are, which keeps the deck's position and size in CSS while the
    cards themselves are transformed by JS. Out of flow, so it doesn't disturb
    the centred heading + sleeve group. */
-.mfa-player__anchor {
+.mfa-cards__deck {
   position: absolute;
   top: 10px;
   right: 10px;
@@ -163,7 +163,7 @@
    pseudo-element here. The 2:3 source matches the card box exactly, so
    `cover` crops nothing. `--mfa-card-back` stays as the paint underneath, so
    the card is never a blank hole while the image is still loading. */
-.mfa-player__cover-back {
+.mfa-cards__face-back {
   background:
     url("/card-back.webp") center / cover no-repeat,
     var(--mfa-card-back);
@@ -171,7 +171,7 @@
 
 /* --------------------------------------------------------------- cover -- */
 
-.mfa-player__stage {
+.mfa-cards__stage {
   /* both dimensions stated outright rather than leaning on aspect-ratio —
      a flex item sizing its cross axis off a ratio is the kind of thing
      browsers disagree about */
@@ -184,7 +184,7 @@
   perspective: 1400px;
   /* Fixed gap under the heading, auto below. The free height splits between
      this auto margin and the heading's auto top margin, so the pair centres
-     as one block and the strip stays pinned to the bottom. The timeline must
+     as one block and the strip stays pinned to the bottom. The dock must
      have no auto margin of its own — a third one would split the free space
      three ways and lift the group. */
   margin: clamp(16px, 3vh, 30px) 0 auto;
@@ -194,7 +194,7 @@
    the deck, the rest stacked at centre. Absolute so they stack, and
    preserve-3d is required or a layer's own 2D transform would flatten the
    flip nested inside it. */
-.mfa-player__layer {
+.mfa-cards__card {
   position: absolute;
   inset: 0;
   transform-style: preserve-3d;
@@ -208,7 +208,7 @@
    w/2 × (1 − cos θ), which is a full card width at 180°. That put the card a
    card-width to the right of the deck at the start of every flight, so it
    never read as being lifted off the deck. */
-.mfa-player__flip {
+.mfa-cards__card-flip {
   position: relative;
   width: 100%;
   height: 100%;
@@ -219,8 +219,8 @@
 /* No drop shadow on either face. The centre holds a stack of cards landing on
    identical pixels, so every shadow compounded with the ones beneath it into
    a dark halo around the sleeve — the artwork reads cleaner without any. */
-.mfa-player__cover,
-.mfa-player__cover-back {
+.mfa-cards__face,
+.mfa-cards__face-back {
   position: absolute;
   inset: 0;
   margin: 0;
@@ -232,29 +232,29 @@
 
 /* The back is paper-light, so it still needs a hairline to hold an edge. The
    artwork front defines its own. */
-.mfa-player__cover-back {
+.mfa-cards__face-back {
   box-shadow: inset 0 0 0 1px var(--mfa-card-line);
 }
 
-.mfa-player__cover {
+.mfa-cards__face {
   background: var(--mfa-chip);
 }
 
 /* pre-turned, so it faces out only while the flip is past 90deg */
-.mfa-player__cover-back {
+.mfa-cards__face-back {
   transform: rotateY(180deg);
 }
 
-.mfa-player__cover-img {
+.mfa-cards__art {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-/* ---------------------------------------------------------- timeline -- */
+/* -------------------------------------------------------------- dock -- */
 
-.mfa-player__track-list {
+.mfa-cards__dock {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -281,15 +281,15 @@
   scrollbar-width: none;
 }
 
-.mfa-player__track-list::-webkit-scrollbar {
+.mfa-cards__dock::-webkit-scrollbar {
   display: none;
 }
 
-.mfa-player__track {
+.mfa-cards__dock-item {
   flex: none;
 }
 
-.mfa-player__thumb {
+.mfa-cards__thumb {
   display: block;
   width: var(--mfa-thumb);
   height: var(--mfa-thumb);
@@ -307,21 +307,21 @@
     box-shadow 0.3s ease;
 }
 
-.mfa-player__thumb img {
+.mfa-cards__thumb img {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.mfa-player__thumb:hover {
+.mfa-cards__thumb:hover {
   opacity: 1;
   transform: translateY(-3px);
 }
 
 /* No-JS / coarse-pointer fallback: the ring is baked onto the active tile as
    a box-shadow. In dock mode the travelling ring element replaces it. */
-.mfa-player__thumb.mfa-is-active {
+.mfa-cards__thumb.mfa-is-active {
   opacity: 1;
   transform: scale(1.1);
   box-shadow:
@@ -335,7 +335,7 @@
    whichever tile has focus — the hovered one, or the active one when the
    pointer is away. `bottom` is derived from the strip padding so it stays
    pinned to the tile baseline while tiles grow upward. */
-.mfa-player__ring {
+.mfa-cards__ring {
   position: absolute;
   left: 0;
   bottom: calc(var(--mfa-strip-bottom) - var(--mfa-ring-pad));
@@ -351,7 +351,7 @@
   z-index: 2;
 }
 
-.mfa-dock-on .mfa-player__ring {
+.mfa-dock-on .mfa-cards__ring {
   opacity: 1;
 }
 
@@ -361,7 +361,7 @@
    tile has focus with a translateY — so it rides the tile as it grows rather
    than sitting at a fixed height. The X translate uses a -50% term so it
    self-centres without JS having to measure the text. */
-.mfa-player__label {
+.mfa-cards__label {
   position: absolute;
   left: 0;
   bottom: var(--mfa-strip-bottom);
@@ -380,16 +380,16 @@
   transition: opacity 0.18s ease;
 }
 
-.mfa-player__label.mfa-is-on {
+.mfa-cards__label.mfa-is-on {
   opacity: 1;
 }
 
 /* the travelling ring takes over, so drop the baked-on one */
-.mfa-dock-on .mfa-player__thumb.mfa-is-active {
+.mfa-dock-on .mfa-cards__thumb.mfa-is-active {
   box-shadow: none;
 }
 
-.mfa-player__thumb:focus-visible {
+.mfa-cards__thumb:focus-visible {
   outline: 2px solid var(--mfa-ink);
   outline-offset: 4px;
 }
@@ -399,7 +399,7 @@
    magnification would lag the cursor badly. The CSS hover/active transforms
    stay as the fallback for coarse pointers and no-JS, where this class is
    never added. Easing in dock mode is done by the JS smoothing instead. */
-.mfa-dock-on .mfa-player__thumb {
+.mfa-dock-on .mfa-cards__thumb {
   transition:
     opacity 0.3s ease,
     box-shadow 0.3s ease;
@@ -430,7 +430,7 @@
      deck is hard against the right edge, so on a narrow screen their boxes
      overlap horizontally — starting the column below the deck is what
      guarantees they can never collide, at any phone size. */
-  .mfa-player {
+  .mfa-cards {
     padding-top: calc(10px + var(--mfa-deck-w) * 1.5 + 14px);
   }
 
@@ -441,15 +441,15 @@
      clearance from the corner deck, and a card in mid-flight is at its
      largest around the middle of the screen — which is exactly the band this
      empties out. */
-  .mfa-player__stage {
+  .mfa-cards__stage {
     margin-bottom: 0;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .mfa-player *,
-  .mfa-player *::before,
-  .mfa-player *::after {
+  .mfa-cards *,
+  .mfa-cards *::before,
+  .mfa-cards *::after {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
   }

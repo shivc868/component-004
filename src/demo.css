@@ -2,7 +2,7 @@
    DEMO PAGE ONLY — do NOT copy this file into your project
    --------------------------------------------------------------------------
    The showcase page shell: base page styles and the page container.
-   The player component itself is styled entirely in style.css.
+   The cards component itself is styled entirely in style.css.
    ========================================================================== */
 
 body {
@@ -28,7 +28,7 @@ body * {
   color: var(--mfa-on-ink);
 }
 
-/* full-bleed: the component owns its own padding so the timeline strip can
+/* full-bleed: the component owns its own padding so the dock strip can
    run edge to edge */
 #mfa-app {
   width: 100%;

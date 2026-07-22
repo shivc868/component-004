@@ -14,46 +14,46 @@
   </head>
   <body>
     <div id="mfa-app">
-      <section class="mfa-player">
+      <section class="mfa-cards">
         <!-- Invisible box that owns where the deck sits. The five cards you
              actually see there are real card layers, parked on this by
              deal.js — this just keeps their position in CSS. -->
-        <span class="mfa-player__anchor" aria-hidden="true"></span>
+        <span class="mfa-cards__deck" aria-hidden="true"></span>
 
         <!-- both of these are driven by whichever tile is active; see dock.js -->
-        <h1 class="mfa-player__heading">So Long</h1>
+        <h1 class="mfa-cards__title">So Long</h1>
 
         <!-- Cover. Only the resting card is authored here — deal.js clones it
              into a ring of layers so each hover can own a card for its whole
              flight. -->
-        <div class="mfa-player__stage">
-          <div class="mfa-player__layer">
-            <div class="mfa-player__flip">
-              <figure class="mfa-player__cover">
+        <div class="mfa-cards__stage">
+          <div class="mfa-cards__card">
+            <div class="mfa-cards__card-flip">
+              <figure class="mfa-cards__face">
                 <img
-                  class="mfa-player__cover-img"
+                  class="mfa-cards__art"
                   src="https://picsum.photos/seed/mfa-so-long/600/900"
                   alt="So Long — album artwork"
                 />
               </figure>
               <!-- the whole back design is one image; see style.css -->
-              <div class="mfa-player__cover-back" aria-hidden="true"></div>
+              <div class="mfa-cards__face-back" aria-hidden="true"></div>
             </div>
           </div>
         </div>
 
-        <!-- timeline -->
-        <ul class="mfa-player__track-list">
+        <!-- dock -->
+        <ul class="mfa-cards__dock">
             <!-- The travelling ring and label. Both are <li> because <ul> only
                  accepts <li> children, but they're absolutely positioned so
                  they sit outside the flex flow, and hidden from AT since the
                  titles are already on the buttons. -->
-            <li class="mfa-player__ring" aria-hidden="true"></li>
-            <li class="mfa-player__label" aria-hidden="true"></li>
+            <li class="mfa-cards__ring" aria-hidden="true"></li>
+            <li class="mfa-cards__label" aria-hidden="true"></li>
 
-            <li class="mfa-player__track">
+            <li class="mfa-cards__dock-item">
               <button
-                class="mfa-player__thumb mfa-is-active"
+                class="mfa-cards__thumb mfa-is-active"
                 type="button"
                 aria-current="true"
                 data-title="So Long"
@@ -62,9 +62,9 @@
                 <img src="https://picsum.photos/seed/mfa-so-long/300/300" alt="So Long" />
               </button>
             </li>
-            <li class="mfa-player__track">
+            <li class="mfa-cards__dock-item">
               <button
-                class="mfa-player__thumb"
+                class="mfa-cards__thumb"
                 type="button"
                 data-title="Letting Go"
                 data-cover="https://picsum.photos/seed/mfa-t02/600/900"
@@ -72,9 +72,9 @@
                 <img src="https://picsum.photos/seed/mfa-t02/300/300" alt="Letting Go" />
               </button>
             </li>
-            <li class="mfa-player__track">
+            <li class="mfa-cards__dock-item">
               <button
-                class="mfa-player__thumb"
+                class="mfa-cards__thumb"
                 type="button"
                 data-title="Afterglow"
                 data-cover="https://picsum.photos/seed/mfa-t03/600/900"
@@ -82,9 +82,9 @@
                 <img src="https://picsum.photos/seed/mfa-t03/300/300" alt="Afterglow" />
               </button>
             </li>
-            <li class="mfa-player__track">
+            <li class="mfa-cards__dock-item">
               <button
-                class="mfa-player__thumb"
+                class="mfa-cards__thumb"
                 type="button"
                 data-title="Slow Burn"
                 data-cover="https://picsum.photos/seed/mfa-t04/600/900"
@@ -92,9 +92,9 @@
                 <img src="https://picsum.photos/seed/mfa-t04/300/300" alt="Slow Burn" />
               </button>
             </li>
-            <li class="mfa-player__track">
+            <li class="mfa-cards__dock-item">
               <button
-                class="mfa-player__thumb"
+                class="mfa-cards__thumb"
                 type="button"
                 data-title="Paper Thin"
                 data-cover="https://picsum.photos/seed/mfa-t05/600/900"
@@ -102,9 +102,9 @@
                 <img src="https://picsum.photos/seed/mfa-t05/300/300" alt="Paper Thin" />
               </button>
             </li>
-            <li class="mfa-player__track">
+            <li class="mfa-cards__dock-item">
               <button
-                class="mfa-player__thumb"
+                class="mfa-cards__thumb"
                 type="button"
                 data-title="Undertow"
                 data-cover="https://picsum.photos/seed/mfa-t06/600/900"
@@ -112,9 +112,9 @@
                 <img src="https://picsum.photos/seed/mfa-t06/300/300" alt="Undertow" />
               </button>
             </li>
-            <li class="mfa-player__track">
+            <li class="mfa-cards__dock-item">
               <button
-                class="mfa-player__thumb"
+                class="mfa-cards__thumb"
                 type="button"
                 data-title="Cold Light"
                 data-cover="https://picsum.photos/seed/mfa-t07/600/900"
@@ -122,9 +122,9 @@
                 <img src="https://picsum.photos/seed/mfa-t07/300/300" alt="Cold Light" />
               </button>
             </li>
-            <li class="mfa-player__track">
+            <li class="mfa-cards__dock-item">
               <button
-                class="mfa-player__thumb"
+                class="mfa-cards__thumb"
                 type="button"
                 data-title="Static Bloom"
                 data-cover="https://picsum.photos/seed/mfa-t08/600/900"
@@ -132,9 +132,9 @@
                 <img src="https://picsum.photos/seed/mfa-t08/300/300" alt="Static Bloom" />
               </button>
             </li>
-            <li class="mfa-player__track">
+            <li class="mfa-cards__dock-item">
               <button
-                class="mfa-player__thumb"
+                class="mfa-cards__thumb"
                 type="button"
                 data-title="Dust"
                 data-cover="https://picsum.photos/seed/mfa-t09/600/900"
@@ -142,9 +142,9 @@
                 <img src="https://picsum.photos/seed/mfa-t09/300/300" alt="Dust" />
               </button>
             </li>
-            <li class="mfa-player__track">
+            <li class="mfa-cards__dock-item">
               <button
-                class="mfa-player__thumb"
+                class="mfa-cards__thumb"
                 type="button"
                 data-title="Halcyon"
                 data-cover="https://picsum.photos/seed/mfa-t10/600/900"
@@ -152,9 +152,9 @@
                 <img src="https://picsum.photos/seed/mfa-t10/300/300" alt="Halcyon" />
               </button>
             </li>
-            <li class="mfa-player__track">
+            <li class="mfa-cards__dock-item">
               <button
-                class="mfa-player__thumb"
+                class="mfa-cards__thumb"
                 type="button"
                 data-title="Nearer"
                 data-cover="https://picsum.photos/seed/mfa-t11/600/900"
@@ -162,9 +162,9 @@
                 <img src="https://picsum.photos/seed/mfa-t11/300/300" alt="Nearer" />
               </button>
             </li>
-            <li class="mfa-player__track">
+            <li class="mfa-cards__dock-item">
               <button
-                class="mfa-player__thumb"
+                class="mfa-cards__thumb"
                 type="button"
                 data-title="Hollow"
                 data-cover="https://picsum.photos/seed/mfa-t12/600/900"
@@ -172,9 +172,9 @@
                 <img src="https://picsum.photos/seed/mfa-t12/300/300" alt="Hollow" />
               </button>
             </li>
-            <li class="mfa-player__track">
+            <li class="mfa-cards__dock-item">
               <button
-                class="mfa-player__thumb"
+                class="mfa-cards__thumb"
                 type="button"
                 data-title="Long Way Down"
                 data-cover="https://picsum.photos/seed/mfa-t13/600/900"
@@ -182,9 +182,9 @@
                 <img src="https://picsum.photos/seed/mfa-t13/300/300" alt="Long Way Down" />
               </button>
             </li>
-            <li class="mfa-player__track">
+            <li class="mfa-cards__dock-item">
               <button
-                class="mfa-player__thumb"
+                class="mfa-cards__thumb"
                 type="button"
                 data-title="Ember"
                 data-cover="https://picsum.photos/seed/mfa-t14/600/900"
