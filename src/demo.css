@@ -1,0 +1,34 @@
+/* ==========================================================================
+   DEMO PAGE ONLY — do NOT copy this file into your project
+   --------------------------------------------------------------------------
+   The showcase page shell: base page styles and the page container.
+   The player component itself is styled entirely in style.css.
+   ========================================================================== */
+
+body {
+  margin: 0;
+  color-scheme: light;
+  color: var(--mfa-ink);
+  background: var(--mfa-bg);
+  font-family: var(--mfa-sans);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body * {
+  box-sizing: border-box;
+}
+
+::selection {
+  background: var(--mfa-ink);
+  color: var(--mfa-bg);
+}
+
+/* full-bleed: the component owns its own padding so the timeline strip can
+   run edge to edge */
+#mfa-app {
+  width: 100%;
+  margin: 0 auto;
+}

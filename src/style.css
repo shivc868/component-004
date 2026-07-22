@@ -1,0 +1,290 @@
+/* ==========================================================================
+   PLAYER COMPONENT — this is the file you copy into your project
+   --------------------------------------------------------------------------
+   Every class, state class and design token is namespaced with `mfa-` /
+   `--mfa-` so nothing here can collide with the styles already on your site.
+   The showcase page around it (page shell, container) lives in demo.css and
+   should NOT be copied.
+   ========================================================================== */
+
+:root {
+  --mfa-bg: #ffffff;
+  --mfa-ink: #17171a;
+  --mfa-chip: #f1f1f3;
+
+  --mfa-sans: "Instrument Sans", "Segoe UI", system-ui, sans-serif;
+
+  /* One knob drives cover, disc and every offset below. The `dvh` term is
+     what keeps the whole component on one screen: on a short viewport the
+     sleeve shrinks rather than pushing the timeline below the fold. The
+     outer max() is the floor for narrow phones, where 26vw goes tiny. */
+  --mfa-cover: max(200px, min(372px, 26vw, 44vh));
+  --mfa-cover: max(200px, min(372px, 26vw, 44dvh));
+  --mfa-thumb: clamp(56px, 5vw, 72px);
+  /* Dock magnification. `peak` is the scale directly under the cursor;
+     `radius` is the falloff reach in item-widths. JS reads both from here so
+     the headroom reserved above the strip always matches the real peak. */
+  --mfa-dock-peak: 1.6;
+  --mfa-dock-radius: 2.6;
+  /* How far the disc slides out from behind the sleeve, as a % of its own
+     width. 21% puts the disc's right edge ~65px past a 372px sleeve, which
+     matches the reference. This is the value to animate for the slide-out. */
+  --mfa-disc-out: 21%;
+}
+
+.mfa-player,
+.mfa-player * {
+  box-sizing: border-box;
+}
+
+.mfa-player {
+  color-scheme: light;
+  color: var(--mfa-ink);
+  background: var(--mfa-bg);
+  font-family: var(--mfa-sans);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  /* no bottom padding — the strip's own 10px padding is the gap to the edge */
+  padding: clamp(18px, 3vh, 28px) 0 0;
+  /* the disc sticks out past the stage box — clip so it can never add
+     horizontal page scroll (which would knock the centred column sideways).
+     `clip` not `hidden`: it doesn't create a scroll container. */
+  overflow-x: clip;
+}
+
+.mfa-player ::selection {
+  background: var(--mfa-ink);
+  color: var(--mfa-bg);
+}
+
+/* ------------------------------------------------------------- heading -- */
+
+.mfa-player__heading {
+  margin: 0;
+  font-size: clamp(26px, 3.2vw, 42px);
+  font-weight: 600;
+  line-height: 1.05;
+  /* tight tracking — optical correction for display sizes */
+  letter-spacing: -0.045em;
+  text-align: center;
+  color: var(--mfa-ink);
+}
+
+/* ----------------------------------------------------- cover + cd disc -- */
+
+.mfa-player__stage {
+  position: relative;
+  width: var(--mfa-cover);
+  aspect-ratio: 1;
+  margin-top: clamp(20px, 4vh, 44px);
+}
+
+.mfa-player__cover {
+  position: relative;
+  z-index: 2;
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 18px;
+  overflow: hidden;
+  background: var(--mfa-chip);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.06),
+    0 18px 40px -18px rgba(0, 0, 0, 0.28);
+}
+
+.mfa-player__cover-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* The disc sits behind the sleeve and pokes out on the right. Kept on a
+   transform so it can be slid in/out later without touching layout. */
+.mfa-player__disc {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: 50%;
+  width: 95%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  transform: translate(-50%, -50%) translateX(var(--mfa-disc-out));
+  background:
+    /* faint pressing rings */
+    repeating-radial-gradient(
+      circle at 50% 50%,
+      rgba(0, 0, 0, 0.02) 0 2px,
+      rgba(255, 255, 255, 0.03) 2px 4px
+    ),
+    /* iridescence */
+      conic-gradient(
+        from 205deg,
+        #e9eef2,
+        #f7e9f1,
+        #eaf2ec,
+        #f4f1e4,
+        #e6eef6,
+        #f2e8f3,
+        #e9eef2
+      ),
+    #eef2f5;
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.05),
+    0 14px 30px -16px rgba(0, 0, 0, 0.35);
+  will-change: transform;
+}
+
+/* soft directional gloss across the platter */
+.mfa-player__disc-sheen {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: linear-gradient(
+    118deg,
+    rgba(255, 255, 255, 0) 30%,
+    rgba(255, 255, 255, 0.65) 48%,
+    rgba(255, 255, 255, 0) 62%
+  );
+  pointer-events: none;
+}
+
+/* clamping ring + spindle hole */
+.mfa-player__disc-hub {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 23%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background:
+    radial-gradient(
+      circle at 50% 50%,
+      var(--mfa-bg) 0 30%,
+      rgba(0, 0, 0, 0.08) 30% 32%,
+      rgba(255, 255, 255, 0.55) 32% 62%,
+      rgba(0, 0, 0, 0.06) 62% 64%,
+      transparent 64%
+    );
+}
+
+/* ---------------------------------------------------------- timeline -- */
+
+.mfa-player__timeline {
+  width: 100%;
+  margin-top: auto; /* absorbs leftover height, pinning the strip to the base */
+  padding-top: clamp(24px, 5vh, 56px);
+}
+
+.mfa-player__track-list {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  /* `center` for old browsers; `safe center` then centres the strip while it
+     fits and degrades to flex-start once it overflows — plain `center` would
+     push the leading thumbs into unscrollable negative space. */
+  justify-content: center;
+  justify-content: safe center;
+  /* tiles grow upward out of a fixed baseline, like the Dock */
+  align-items: flex-end;
+  width: 100%;
+  margin: 0;
+  /* Bottom 20px is the gap to the viewport edge. The top must reserve the
+     magnification headroom: scaling is a transform, so layout height stays
+     at --mfa-thumb and the grown tile would be clipped by the scroll
+     container. Origin is bottom centre, so all growth is upward. */
+  padding: calc(var(--mfa-thumb) * (var(--mfa-dock-peak) - 1) + 10px) 20px 20px;
+  list-style: none;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+
+.mfa-player__track-list::-webkit-scrollbar {
+  display: none;
+}
+
+.mfa-player__track {
+  flex: none;
+}
+
+.mfa-player__thumb {
+  display: block;
+  width: var(--mfa-thumb);
+  height: var(--mfa-thumb);
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--mfa-chip);
+  cursor: pointer;
+  opacity: 0.85;
+  transform-origin: bottom center;
+  transition:
+    transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.mfa-player__thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mfa-player__thumb:hover {
+  opacity: 1;
+  transform: translateY(-3px);
+}
+
+/* white gap + dark ring, drawn outside the tile so it never crops the art */
+.mfa-player__thumb.mfa-is-active {
+  opacity: 1;
+  transform: scale(1.1);
+  box-shadow:
+    0 0 0 3px var(--mfa-bg),
+    0 0 0 4px var(--mfa-ink);
+}
+
+.mfa-player__thumb:focus-visible {
+  outline: 2px solid var(--mfa-ink);
+  outline-offset: 4px;
+}
+
+/* Dock mode. JS writes `transform` inline every frame, so the transition
+   above has to go or each frame would queue its own 0.3s tween and the
+   magnification would lag the cursor badly. The CSS hover/active transforms
+   stay as the fallback for coarse pointers and no-JS, where this class is
+   never added. Easing in dock mode is done by the JS smoothing instead. */
+.mfa-dock-on .mfa-player__thumb {
+  transition:
+    opacity 0.3s ease,
+    box-shadow 0.3s ease;
+  will-change: transform;
+}
+
+/* ---------------------------------------------------------- responsive -- */
+
+/* No width breakpoints needed: the vertical rhythm is vh-clamped and the type
+   sizes are vw-clamped, so everything collapses on its own. */
+
+@media (prefers-reduced-motion: reduce) {
+  .mfa-player *,
+  .mfa-player *::before,
+  .mfa-player *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
