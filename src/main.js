@@ -20,7 +20,7 @@ const DECK_Z = 50; // deck cards keep their own z band, below anything dealt
 
 const EASE_X = "power2.out";
 const EASE_Y = "power1.out"; // lags x, which bows the flight into an arc
-const EASE_SCALE = "power1.out";
+const EASE_SCALE = "expo.out";
 const EASE_FLIP = "power2.inOut";
 const EASE_SHIFT = "power2.out";
 
@@ -202,6 +202,9 @@ function createDealer(root) {
     });
     flights.set(card, tl);
 
+    /* Scale is the fast one here: expo.out reaches full size roughly a third
+       of the way in, so the card is already at centre size while it is still
+       travelling, and the rest of the flight is pure glide. */
     // .to() not .fromTo() — if this card was still sliding up a deck slot when
     // it got dealt, it departs from wherever it actually is.
     tl.to(card, { x: 0, duration: dur, ease: EASE_X }, 0)
