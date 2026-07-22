@@ -18,6 +18,8 @@
       that back into the falloff oscillates.
 --------------------------------------------------------------------------- */
 
+import { createDealer } from "./deal.js";
+
 const PEAK_FALLBACK = 1.6;
 const RADIUS_FALLBACK = 2.6;
 // matches the CSS `.mfa-is-active` scale, so handing over to inline
@@ -62,7 +64,7 @@ export function initDock(list) {
   // the "now playing" pair the strip drives
   const player = list.closest(".mfa-player");
   const heading = player?.querySelector(".mfa-player__heading");
-  const cover = player?.querySelector(".mfa-player__cover-img");
+  const dealer = createDealer(player); // owns the cover artwork from here on
 
   // Hover sweeps the active tile across the whole strip in a fraction of a
   // second, so every full-size cover has to be in cache before it's needed —
@@ -130,18 +132,19 @@ export function initDock(list) {
 
     const title = tiles[i].dataset.title;
     if (heading && title) heading.textContent = title;
-    if (cover && tiles[i].dataset.cover) {
-      cover.src = tiles[i].dataset.cover;
-      if (title) cover.alt = `${title} — album artwork`;
-    }
+    // the dealer loads the artwork onto the incoming layer itself, so the
+    // resting one keeps the outgoing image until the new card covers it
+    dealer.play(tiles[i].dataset.cover, title ? `${title} — album artwork` : "");
   }
 
   function retarget() {
     if (pointerX === null) {
       for (let i = 0; i < tiles.length; i++) target[i] = rest[i];
       hoverIndex = null;
+      dealer.setAwake(false); // deck flattens to one uniform size
       return;
     }
+    dealer.setAwake(true);
     // convert to the same page space the rest centres live in
     const x = pointerX - list.getBoundingClientRect().left + list.scrollLeft;
 

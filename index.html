@@ -15,28 +15,32 @@
   <body>
     <div id="mfa-app">
       <section class="mfa-player">
-        <!-- corner card: static, absolutely positioned so it sits outside the
-             centred column -->
-        <aside class="mfa-player__card">
-          <img
-            class="mfa-player__card-img"
-            src="https://picsum.photos/seed/mfa-card/400/600"
-            alt="Allagi — latest release"
-          />
-        </aside>
+        <!-- Invisible box that owns where the deck sits. The five cards you
+             actually see there are real card layers, parked on this by
+             deal.js — this just keeps their position in CSS. -->
+        <span class="mfa-player__anchor" aria-hidden="true"></span>
 
         <!-- both of these are driven by whichever tile is active; see dock.js -->
         <h1 class="mfa-player__heading">So Long</h1>
 
-        <!-- cover -->
+        <!-- Cover. Only the resting card is authored here — deal.js clones it
+             into a ring of layers so each hover can own a card for its whole
+             flight. -->
         <div class="mfa-player__stage">
-          <figure class="mfa-player__cover">
-            <img
-              class="mfa-player__cover-img"
-              src="https://picsum.photos/seed/mfa-so-long/600/900"
-              alt="So Long — album artwork"
-            />
-          </figure>
+          <div class="mfa-player__layer">
+            <div class="mfa-player__flip">
+              <figure class="mfa-player__cover">
+                <img
+                  class="mfa-player__cover-img"
+                  src="https://picsum.photos/seed/mfa-so-long/600/900"
+                  alt="So Long — album artwork"
+                />
+              </figure>
+              <div class="mfa-player__cover-back" aria-hidden="true">
+                <span class="mfa-player__monogram mfa-player__monogram--lg">A</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- timeline -->

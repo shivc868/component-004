@@ -12,6 +12,13 @@
   --mfa-ink: #17171a;
   --mfa-chip: #f1f1f3;
 
+  /* Card back. Deliberately paper-light: it sits in the corner permanently
+     and is the first thing the sleeve shows on every flip, so it has to stay
+     quieter than the artwork. */
+  --mfa-card-back: #f2f2f4;
+  --mfa-card-line: rgba(23, 23, 26, 0.1);
+  --mfa-card-mark: rgba(23, 23, 26, 0.55);
+
   --mfa-sans: "Instrument Sans", "Segoe UI", system-ui, sans-serif;
 
   /* The artwork is 2:3 portrait, so height is the driving dimension and the
@@ -94,30 +101,68 @@
   color: var(--mfa-ink);
 }
 
-/* ---------------------------------------------------------- corner card -- */
+/* ---------------------------------------------------------- corner deck -- */
 
-/* Out of flow, so it never disturbs the centred heading + sleeve group. */
-.mfa-player__card {
+/* Geometry only, never painted. deal.js measures this to work out where the
+   deck slots are, which keeps the deck's position and size in CSS while the
+   cards themselves are transformed by JS. Out of flow, so it doesn't disturb
+   the centred heading + sleeve group. */
+.mfa-player__anchor {
   position: absolute;
   top: clamp(16px, 3vh, 30px);
   right: clamp(16px, 2.5vw, 38px);
-  z-index: 4;
   width: clamp(96px, 9vw, 132px);
-  /* no padding or background — the card box is the image box, so the shadow
-     hugs the artwork instead of ringing an invisible frame around it */
-  border-radius: 10px;
-  box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.05),
-    0 14px 30px -16px rgba(0, 0, 0, 0.3);
+  aspect-ratio: 2 / 3;
+  visibility: hidden;
+  pointer-events: none;
 }
 
-.mfa-player__card-img {
-  display: block;
-  width: 100%;
-  aspect-ratio: 2 / 3;
-  object-fit: cover;
-  border-radius: inherit;
-  background: var(--mfa-chip);
+/* The card back. Sized in % throughout so the one design holds at every scale
+   — deck-sized in the corner, and full-sized once dealt. */
+.mfa-player__cover-back {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  /* Paper, not ink. A solid black back was the heaviest mass on an otherwise
+     white page and pulled the eye off the artwork. Fine hatch over a soft
+     top-lit wash reads as a card back without carrying any weight. */
+  background:
+    repeating-linear-gradient(
+      -45deg,
+      rgba(23, 23, 26, 0.03) 0 1px,
+      transparent 1px 8px
+    ),
+    radial-gradient(130% 100% at 50% 0%, #fcfcfd 0%, var(--mfa-card-back) 72%);
+}
+
+/* inset frame, the way a playing card is bordered */
+.mfa-player__cover-back::before {
+  content: "";
+  position: absolute;
+  inset: 6.5%;
+  border: 1px solid var(--mfa-card-line);
+  border-radius: 5px;
+  pointer-events: none;
+}
+
+.mfa-player__monogram {
+  display: grid;
+  place-items: center;
+  width: 40%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 1px solid var(--mfa-card-line);
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--mfa-card-mark);
+}
+
+/* Every card carries this size; at deck scale (~0.45) it lands around 14px,
+   which is why the base rule above is tuned to 15px. The card never restyles
+   itself as it grows — it is only ever scaled. */
+.mfa-player__monogram--lg {
+  font-size: clamp(26px, 3vw, 38px);
 }
 
 /* --------------------------------------------------------------- cover -- */
@@ -128,6 +173,11 @@
      browsers disagree about */
   height: var(--mfa-cover-h);
   width: var(--mfa-cover-w);
+  position: relative; /* stacking context for the two card layers */
+  /* Perspective lives here because the stage is the one box in this subtree
+     that is never transformed — which also makes it safe for deal.js to
+     measure the flight distance from. */
+  perspective: 1400px;
   /* Fixed gap under the heading, auto below. The free height splits between
      this auto margin and the heading's auto top margin, so the pair centres
      as one block and the strip stays pinned to the bottom. The timeline must
@@ -136,16 +186,78 @@
   margin: clamp(16px, 3vh, 30px) 0 auto;
 }
 
-.mfa-player__cover {
-  margin: 0;
+/* A pool of these is cloned by deal.js: five parked on the corner anchor as
+   the deck, the rest stacked at centre. Absolute so they stack, and
+   preserve-3d is required or a layer's own 2D transform would flatten the
+   flip nested inside it. */
+.mfa-player__layer {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  /* No `will-change`: there are POOL of these and a permanent promotion each
+     would mean a standing composited layer per card. GSAP promotes them for
+     the duration of a tween and releases them after. */
+}
+
+/* The flip. Origin stays at the centre (the default) — do not hinge this on
+   an edge. Rotating about the right edge displaces the card's centre by
+   w/2 × (1 − cos θ), which is a full card width at 180°. That put the card a
+   card-width to the right of the deck at the start of every flight, so it
+   never read as being lifted off the deck. */
+.mfa-player__flip {
+  position: relative;
   width: 100%;
   height: 100%;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.mfa-player__cover,
+.mfa-player__cover-back {
+  position: absolute;
+  inset: 0;
+  margin: 0;
   border-radius: 18px;
   overflow: hidden;
-  background: var(--mfa-chip);
+  /* without this both faces render at once and the back shows through */
+  backface-visibility: hidden;
   box-shadow:
     0 1px 2px rgba(0, 0, 0, 0.06),
     0 18px 40px -18px rgba(0, 0, 0, 0.28);
+}
+
+/* The back is paper-light, so it needs a hairline to hold an edge against the
+   white page. The artwork front defines its own edge. Declared after the
+   shared rule above, which would otherwise overwrite the shadow. */
+.mfa-player__cover-back {
+  box-shadow:
+    inset 0 0 0 1px var(--mfa-card-line),
+    0 1px 2px rgba(0, 0, 0, 0.06),
+    0 18px 40px -18px rgba(0, 0, 0, 0.28);
+  transition: box-shadow 0.35s ease;
+}
+
+/* Deck at rest: the five cards land on exactly the same pixels, so five drop
+   shadows stack and read far darker than one card should. Strip the drop
+   shadow off every card... */
+.mfa-player__layer.mfa-is-flat .mfa-player__cover-back {
+  box-shadow: inset 0 0 0 1px var(--mfa-card-line);
+}
+
+/* ...and give a single soft one back to the card on top. */
+.mfa-player__layer.mfa-is-crown .mfa-player__cover-back {
+  box-shadow:
+    inset 0 0 0 1px var(--mfa-card-line),
+    0 4px 14px -10px rgba(0, 0, 0, 0.25);
+}
+
+.mfa-player__cover {
+  background: var(--mfa-chip);
+}
+
+/* pre-turned, so it faces out only while the flip is past 90deg */
+.mfa-player__cover-back {
+  transform: rotateY(180deg);
 }
 
 .mfa-player__cover-img {
