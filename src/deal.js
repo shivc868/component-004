@@ -32,7 +32,7 @@
 
 import gsap from "gsap";
 
-const DECK = 5; // cards visible in the corner
+const DECK = 4; // cards visible in the corner
 const PILE = 6; // cards parked at centre before the bottom one is recycled
 const POOL = DECK + PILE;
 
@@ -49,12 +49,24 @@ const FLIGHT_MAX = 0.68;
 // cursor.
 const PACE = 2.2;
 
-/* `power2.inOut`, not an `out` ease. An out-ease covers ~60% of its distance
-   in the first quarter of its time, so the card was already near full size
-   the instant it left the deck — it read as a size glitch rather than growth.
-   An inOut leaves the deck slowly, so the scale visibly ramps along the
-   flight. Position and scale share one tween so they can't desync. */
-const FLIGHT_EASE = "power2.inOut";
+/* Flight easing. A real dealt card leaves the hand fast and is then slowed by
+   friction, so the throw wants an `out` curve — but the three properties must
+   not share one, or the motion reads as a rigid slide.
+
+     x  power2.out  the throw itself; most of the distance goes early
+     y  power1.out  lags x slightly, which bows the path into an arc instead
+                    of a dead-straight line between the two points
+     scale power1.out  the gentlest of the three. This is the one that used to
+                    be on power3.out, where it hit ~60% growth in the first
+                    quarter of the flight and read as the card popping to full
+                    size the instant it left the deck.
+
+   Ordering them slow-to-fast as scale < y < x is what gives the throw its
+   sense of weight. */
+const EASE_X = "power2.out";
+const EASE_Y = "power1.out";
+const EASE_SCALE = "power1.out";
+const EASE_FLIP = "power2.inOut";
 const SHIFT_EASE = "power2.out";
 
 const DECK_Z = 50; // deck cards sit in their own band, below anything dealt
@@ -198,11 +210,16 @@ export function createDealer(player) {
     gsap.killTweensOf([card, flipOf(card)]);
     gsap
       .timeline()
-      .to(card, { x: 0, y: 0, scale: 1, duration: dur, ease: FLIGHT_EASE }, 0)
+      .to(card, { x: 0, duration: dur, ease: EASE_X }, 0)
+      .to(card, { y: 0, duration: dur, ease: EASE_Y }, 0)
+      .to(card, { scale: 1, duration: dur, ease: EASE_SCALE }, 0)
       .to(
         flipOf(card),
-        { rotateY: 0, duration: dur * 0.85, ease: "power2.inOut" },
-        dur * 0.18 // a beat of travel at deck size before the reveal starts
+        // Finishes at ~0.82 of the flight, not past the end. The card lands
+        // already face-up and just settles, rather than still turning over as
+        // it arrives.
+        { rotateY: 0, duration: dur * 0.7, ease: EASE_FLIP },
+        dur * 0.12 // a beat on the deck before the reveal starts
       );
 
     // The replacement starts one slot below the deck, face-down and clear, and
