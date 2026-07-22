@@ -96,6 +96,7 @@ export function createDealer(player) {
   let awake = false; // graduated sizes while hovering, uniform at rest
   let z = 0;
   let last = 0;
+  const flights = new Map(); // card -> its in-flight timeline
 
   const flipOf = (card) => card.querySelector(".mfa-player__flip");
 
@@ -205,12 +206,32 @@ export function createDealer(player) {
     last = now;
     const dur = gsap.utils.clamp(FLIGHT_MIN, FLIGHT_MAX, (gap / 1000) * PACE);
 
-    // The deal. `.to()` on purpose — if this card was still sliding up a slot
-    // when it got dealt, it departs from wherever it actually is.
+    /* Cards have to land in the order they were dealt. Flight time tracks
+       hover speed, and the first card of a sweep always gets the longest one
+       (nothing preceded it, so its `gap` is huge) — so on a fast sweep an
+       early card routinely lands after a later one and, having the lower
+       z-index, slides in underneath the card already sitting on top.
+
+       Rather than stretch this card's flight to land last — which would undo
+       the speed matching — hurry along whatever is still in the air. Older
+       cards visibly accelerate, which reads as the hand quickening, and every
+       card still flies its own path. */
+    const allowed = dur * 0.85;
+    for (const t of flights.values()) {
+      const left = t.duration() - t.time();
+      if (left / t.timeScale() > allowed) t.timeScale(left / allowed);
+    }
+
+    const prior = flights.get(card);
+    if (prior) prior.kill(); // a recycled card may still owe us a landing
     gsap.killTweensOf([card, flipOf(card)]);
-    gsap
-      .timeline()
-      .to(card, { x: 0, duration: dur, ease: EASE_X }, 0)
+
+    const tl = gsap.timeline({ onComplete: () => flights.delete(card) });
+    flights.set(card, tl);
+
+    // `.to()` on purpose — if this card was still sliding up a deck slot when
+    // it got dealt, it departs from wherever it actually is.
+    tl.to(card, { x: 0, duration: dur, ease: EASE_X }, 0)
       .to(card, { y: 0, duration: dur, ease: EASE_Y }, 0)
       .to(card, { scale: 1, duration: dur, ease: EASE_SCALE }, 0)
       .to(
