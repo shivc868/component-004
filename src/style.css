@@ -30,14 +30,14 @@
   /* The photo is square, the same 1:1 as the dock thumbnails, so the tile
      that flies up keeps its shape all the way to the centre. Height drives it
      and width simply matches. Both terms are relative, so it keeps growing
-     with the screen instead of stopping at a fixed ceiling — `34vw` governs
-     wide-and-short viewports, `44dvh` tall ones, and whichever is scarcer
+     with the screen instead of stopping at a fixed ceiling — `40vw` governs
+     wide-and-short viewports, `54dvh` tall ones, and whichever is scarcer
      wins. The `dvh` term is also what keeps the component on one screen: on a
      short viewport the photo shrinks rather than pushing the dock below the
-     fold. The outer max() is the floor for narrow phones, where 34vw goes
+     fold. The outer max() is the floor for narrow phones, where 40vw goes
      tiny. */
-  --mfa-cover-h: max(240px, min(34vw, 44vh));
-  --mfa-cover-h: max(240px, min(34vw, 44dvh));
+  --mfa-cover-h: max(240px, min(40vw, 54vh));
+  --mfa-cover-h: max(240px, min(40vw, 54dvh));
   --mfa-cover-w: var(--mfa-cover-h);
   --mfa-thumb: clamp(48px, 4.2vw, 62px);
   /* Dock magnification. `peak` is the scale directly under the cursor;
@@ -48,6 +48,17 @@
   /* gap to the viewport bottom; shared by the strip padding and the ring so
      the two can't drift apart */
   --mfa-strip-bottom: 20px;
+  /* Gap the end thumbnails keep from the screen edge when the strip is panned
+     to a limit. It has to clear more than the resting 14px, because the tile
+     the cursor is over there is blown up to fisheye size and carries its
+     selection ring — so this reserves the 14px gap PLUS that magnified reach,
+     which is why it is derived from the thumb size, the peak and the ring pad
+     rather than being a flat number. Only ever seen as that ~14px gap at a
+     panned end; when the strip fits it is centred and this is invisible. */
+  --mfa-strip-side: calc(
+    14px + var(--mfa-ring-pad) + var(--mfa-thumb) * (var(--mfa-dock-peak) - 1) *
+      0.5
+  );
   /* Corner rounding, tighter than a typical card so the artwork stays the
      shape it was cropped to. The ring derives from the tile value and the
      deck from the cover one, so these two drive every rounded edge. */
@@ -238,14 +249,16 @@
   align-items: flex-end;
   width: 100%;
   margin: 0;
-  /* Bottom 20px is the gap to the viewport edge. The top must reserve the
-     magnification headroom: scaling is a transform, so layout height stays
-     at --mfa-thumb and the grown tile would be clipped by the scroll
-     container. Origin is bottom centre, so all growth is upward. */
-  padding: calc(
-      var(--mfa-thumb) * (var(--mfa-dock-peak) - 1) + var(--mfa-label-room)
-    )
-    20px var(--mfa-strip-bottom);
+  /* Top reserves the magnification headroom: scaling is a transform, so layout
+     height stays at --mfa-thumb and the grown tile would be clipped by the
+     scroll container. Origin is bottom centre, so all growth is upward. Bottom
+     is the gap to the viewport edge; the sides keep the panned end tiles clear
+     of the screen edge — see --mfa-strip-side. */
+  padding-top: calc(
+    var(--mfa-thumb) * (var(--mfa-dock-peak) - 1) + var(--mfa-label-room)
+  );
+  padding-bottom: var(--mfa-strip-bottom);
+  padding-inline: var(--mfa-strip-side);
   list-style: none;
   position: relative; /* containing block for the travelling ring */
   overflow-x: auto;

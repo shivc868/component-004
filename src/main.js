@@ -23,6 +23,7 @@ const EASE_FLY = "power2.inOut";
 
 const ACTIVE_REST = 1.1; // matches the .mfa-is-active scale in CSS
 const SMOOTHING = 0.24;
+const PAN_SMOOTHING = 0.18; // easing of the hover-pan when the strip overflows
 const RING_TRAVEL = 0.3;
 const EPSILON = 0.0005;
 
@@ -239,13 +240,20 @@ function initDock(list) {
   let centers = [];
   let runOrigin = 0;
 
+  // hover-pan geometry, refreshed on measure: the strip's left edge and width
+  // in the viewport, and how far it can scroll before the right end shows.
+  // maxScroll 0 means the whole roster fits and there is nothing to pan.
+  let listLeft = 0;
+  let viewW = 0;
+  let maxScroll = 0;
+
   function measure() {
     const prior = tiles.map((t) => t.style.transform);
     tiles.forEach((t) => {
       t.style.transform = "none";
     });
 
-    const listLeft = list.getBoundingClientRect().left;
+    listLeft = list.getBoundingClientRect().left;
     const rects = tiles.map((t) => t.getBoundingClientRect());
 
     base = rects[0].width;
@@ -256,6 +264,11 @@ function initDock(list) {
     );
     // `safe center` means the run doesn't start at the padding edge
     runOrigin = centers[0] - base / 2;
+
+    // read with the transforms cleared, though scale transforms don't affect
+    // scroll metrics anyway
+    viewW = list.clientWidth;
+    maxScroll = Math.max(0, list.scrollWidth - list.clientWidth);
 
     tiles.forEach((t, i) => {
       t.style.transform = prior[i];
@@ -310,6 +323,30 @@ function initDock(list) {
 
     // deltaFrames advances its own clock, so read it once and share it
     const dt = Math.min(deltaFrames(), 4);
+
+    /* Hover-pan. When the roster is too wide to fit, the cursor's position
+       across the viewport maps straight to a position across the whole strip:
+       at the left edge the strip sits at scroll 0 (its left end on show), at
+       the right edge it sits at maxScroll (right end on show), and the middle
+       is centred. Driven through scrollLeft rather than a transform so the
+       fisheye and the travelling ring — both already written in scroll-aware
+       coordinates — pan along with it for free. retarget() runs straight after
+       so the magnified tile and the active/centre photo track whoever the
+       cursor is now over as the strip slides beneath it. */
+    if (maxScroll > 0 && pointerX !== null) {
+      const frac = Math.min(1, Math.max(0, (pointerX - listLeft) / viewW));
+      const goalScroll = frac * maxScroll;
+      const cur = list.scrollLeft;
+      const d = goalScroll - cur;
+      if (Math.abs(d) > 0.5) {
+        list.scrollLeft = cur + d * (1 - Math.pow(1 - PAN_SMOOTHING, dt));
+        moving = true;
+      } else if (cur !== goalScroll) {
+        list.scrollLeft = goalScroll;
+      }
+      retarget();
+    }
+
     const k = 1 - Math.pow(1 - SMOOTHING, dt);
     for (let i = 0; i < tiles.length; i++) {
       const diff = target[i] - scale[i];
