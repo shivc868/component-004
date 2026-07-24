@@ -8,14 +8,13 @@
    ========================================================================== */
 
 :root {
-  /* Palette: deep blue backdrop, near-black surfaces, pale ink. `--mfa-ink`
+  /* Palette: pure black backdrop, near-black surfaces, pale ink. `--mfa-ink`
      is the foreground of the theme, not a colour name — inverting it and
      `--mfa-on-ink` is what carries the whole component from light to dark,
      because the heading, the hover label's pill, the travelling ring, the
      focus outline and the selection all resolve from that one pair. */
-  --mfa-sky-top: #16283f;
-  --mfa-sky-bottom: #070d17;
-  --mfa-bg: #0c1524; /* surfaces sitting on the sky */
+  --mfa-sky: #181818;
+  --mfa-bg: #686a6d; /* surfaces sitting on the sky */
   --mfa-ink: #e9f1fb; /* pale — headings, the label pill, the ring */
   --mfa-on-ink: #0a1626; /* dark text sitting on top of that pale pill */
   --mfa-chip: #1a2942;
@@ -28,23 +27,18 @@
 
   --mfa-sans: "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
 
-  /* The artwork is 2:3 portrait, so height is the driving dimension and the
-     width is derived. Both terms are relative, so the sleeve keeps growing
-     with the screen instead of stopping at a fixed ceiling — `30vw` governs
-     wide-and-short viewports, `46dvh` tall ones, and whichever is scarcer
+  /* The photo is square, the same 1:1 as the dock thumbnails, so the tile
+     that flies up keeps its shape all the way to the centre. Height drives it
+     and width simply matches. Both terms are relative, so it keeps growing
+     with the screen instead of stopping at a fixed ceiling — `34vw` governs
+     wide-and-short viewports, `44dvh` tall ones, and whichever is scarcer
      wins. The `dvh` term is also what keeps the component on one screen: on a
-     short viewport the sleeve shrinks rather than pushing the dock below
-     the fold. The outer max() is the floor for narrow phones, where 30vw
-     goes tiny. */
-  --mfa-cover-h: max(240px, min(30vw, 46vh));
-  --mfa-cover-h: max(240px, min(30vw, 46dvh));
-  --mfa-cover-w: calc(var(--mfa-cover-h) * 2 / 3);
-  /* The deck is a small copy of the sleeve, so it is derived from it rather
-     than sized on its own. That keeps the deck-to-sleeve ratio fixed, which
-     matters for the deal: main.js takes its flight scale from
-     deckWidth / stageWidth, so a constant ratio means the animation looks
-     identical at every screen size. */
-  --mfa-deck-w: max(88px, calc(var(--mfa-cover-w) * 0.46));
+     short viewport the photo shrinks rather than pushing the dock below the
+     fold. The outer max() is the floor for narrow phones, where 34vw goes
+     tiny. */
+  --mfa-cover-h: max(240px, min(34vw, 44vh));
+  --mfa-cover-h: max(240px, min(34vw, 44dvh));
+  --mfa-cover-w: var(--mfa-cover-h);
   --mfa-thumb: clamp(48px, 4.2vw, 62px);
   /* Dock magnification. `peak` is the scale directly under the cursor;
      `radius` is the falloff reach in item-widths. JS reads both from here so
@@ -82,24 +76,9 @@
 .mfa-cards {
   color-scheme: dark;
   color: var(--mfa-ink);
-  /* The background image is a pale field built for the light theme. Rather
-     than replace it, the dark gradient is multiplied over it: multiply keeps
-     the image's haze structure while pulling it down into deep navy, and
-     unlike a semi-transparent scrim it doesn't lift the blacks or wash the
-     colour out to slate.
-
-     The white background-color is deliberate — it is multiply's identity, so
-     before the image loads the gradient blends against white and paints as
-     itself. Against a dark colour it would multiply down to near-black and
-     then visibly lighten when the image arrived. */
-  background-color: #ffffff;
-  background-image:
-    linear-gradient(180deg, var(--mfa-sky-top) 0%, var(--mfa-sky-bottom) 100%),
-    url("/bg.webp");
-  background-position: center;
-  background-size: cover;
-  background-repeat: no-repeat;
-  background-blend-mode: multiply;
+  /* Flat pure black — no image, no gradient, so there is nothing to load in
+     and nothing to shift once it does. */
+  background-color: var(--mfa-sky);
   font-family: var(--mfa-sans);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -142,22 +121,6 @@
   color: var(--mfa-ink);
 }
 
-/* ---------------------------------------------------------- corner deck -- */
-
-/* Geometry only, never painted. main.js measures this to work out where the
-   deck slots are, which keeps the deck's position and size in CSS while the
-   cards themselves are transformed by JS. Out of flow, so it doesn't disturb
-   the centred heading + sleeve group. */
-.mfa-cards__deck {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  width: var(--mfa-deck-w);
-  aspect-ratio: 2 / 3;
-  visibility: hidden;
-  pointer-events: none;
-}
-
 /* The card back. One 848x1264 artwork carrying the hatch, the inset frame and
    the monogram — everything that used to be built from gradients and a
    pseudo-element here. The 2:3 source matches the card box exactly, so
@@ -177,11 +140,21 @@
      browsers disagree about */
   height: var(--mfa-cover-h);
   width: var(--mfa-cover-w);
-  position: relative; /* stacking context for the two card layers */
-  /* Perspective lives here because the stage is the one box in this subtree
-     that is never transformed — which also makes it safe for main.js to
-     measure the flight distance from. */
-  perspective: 1400px;
+  position: relative; /* stacking context for the stacked card layers */
+  /* A card in flight starts scaled down and translated all the way to its
+     dock thumbnail, so it overflows the stage downward. The stage must paint
+     ABOVE the dock for that to read as the tile lifting toward the centre —
+     the dock is later in the DOM and would otherwise cover the incoming card.
+     visible overflow lets the shrunk card show outside the stage box. */
+  z-index: 1;
+  overflow: visible;
+  /* ...but painting above the dock must NOT mean catching its pointer events.
+     A flight overflows a big card down across the strip, and the stage's own
+     box sits over the dock's magnification headroom — with pointer-events on,
+     either would swallow the hover and freeze the fisheye until the cursor
+     moved off. Nothing in here is interactive (all input is on the dock
+     buttons), so let every pointer event fall straight through to the dock. */
+  pointer-events: none;
   /* Fixed gap under the heading, auto below. The free height splits between
      this auto margin and the heading's auto top margin, so the pair centres
      as one block and the strip stays pinned to the bottom. The dock must
@@ -190,30 +163,27 @@
   margin: clamp(16px, 3vh, 30px) 0 auto;
 }
 
-/* A pool of these is cloned by main.js: five parked on the corner anchor as
-   the deck, the rest stacked at centre. Absolute so they stack, and
-   preserve-3d is required or a layer's own 2D transform would flatten the
-   flip nested inside it. */
+/* A pool of these is cloned by main.js and stacked on the exact same box —
+   every flight needs a layer of its own, so several can be in the air at once
+   during a fast sweep of the dock. Absolute so they stack. main.js flies each
+   one in from its dock thumbnail with a translate + scale on this element. */
 .mfa-cards__card {
   position: absolute;
   inset: 0;
-  transform-style: preserve-3d;
-  /* No `will-change`: there are POOL of these and a permanent promotion each
-     would mean a standing composited layer per card. GSAP promotes them for
-     the duration of a tween and releases them after. */
+  will-change: transform;
+  /* card grows from a small thumbnail, so anchor the scale at the centre and
+     let it settle there rather than drifting off a corner */
+  transform-origin: 50% 50%;
 }
 
-/* The flip. Origin stays at the centre (the default) — do not hinge this on
-   an edge. Rotating about the right edge displaces the card's centre by
-   w/2 × (1 − cos θ), which is a full card width at 180°. That put the card a
-   card-width to the right of the deck at the start of every flight, so it
-   never read as being lifted off the deck. */
+/* Holds the two faces. The back is never seen now that the card flies rather
+   than flips, but the structure stays so the flip could be brought back
+   without reshaping the DOM. */
 .mfa-cards__card-flip {
   position: relative;
   width: 100%;
   height: 100%;
   transform-style: preserve-3d;
-  will-change: transform;
 }
 
 /* No drop shadow on either face. The centre holds a stack of cards landing on
@@ -240,7 +210,8 @@
   background: var(--mfa-chip);
 }
 
-/* pre-turned, so it faces out only while the flip is past 90deg */
+/* turned away so its backface stays hidden; the flying card only ever shows
+   its front */
 .mfa-cards__face-back {
   transform: rotateY(180deg);
 }
@@ -271,8 +242,10 @@
      magnification headroom: scaling is a transform, so layout height stays
      at --mfa-thumb and the grown tile would be clipped by the scroll
      container. Origin is bottom centre, so all growth is upward. */
-  padding: calc(var(--mfa-thumb) * (var(--mfa-dock-peak) - 1) + var(--mfa-label-room)) 20px
-    var(--mfa-strip-bottom);
+  padding: calc(
+      var(--mfa-thumb) * (var(--mfa-dock-peak) - 1) + var(--mfa-label-room)
+    )
+    20px var(--mfa-strip-bottom);
   list-style: none;
   position: relative; /* containing block for the travelling ring */
   overflow-x: auto;
@@ -410,37 +383,25 @@
 
 /* ------------------------------------------------------------- mobile -- */
 
-/* On a phone the shared sizing leaves the sleeve tiny and the screen mostly
-   empty: `30vw` is the scarcer term at this width, so it wins the min() and
+/* On a phone the shared sizing leaves the photo tiny and the screen mostly
+   empty: `34vw` is the scarcer term at this width, so it wins the min() and
    collapses onto the 240px floor no matter how much height is going spare.
 
-   Here width drives it instead (`117vw` of height = 78vw of width) and height
-   only caps it. The cap is `100dvh - 340px`, not a dvh fraction, because what
-   the sleeve competes with — the deck reserve, heading, gap and strip — is a
-   fixed pixel stack, so a proportional cap over- or under-shoots depending on
-   phone height. */
+   Here width drives it instead — `78vw`, so the square photo keeps a margin
+   either side — and height only caps it. The cap is `100dvh - 300px`, not a
+   dvh fraction, because what the photo competes with — the page padding,
+   heading, gap and strip — is a fixed pixel stack, so a proportional cap
+   over- or under-shoots depending on phone height. */
 @media (max-width: 640px) {
   :root {
-    --mfa-deck-w: 72px;
-    --mfa-cover-h: max(200px, min(117vw, calc(100vh - 340px)));
-    --mfa-cover-h: max(200px, min(117vw, calc(100dvh - 340px)));
-  }
-
-  /* Reserve the deck's full height at the top. The sleeve is centred and the
-     deck is hard against the right edge, so on a narrow screen their boxes
-     overlap horizontally — starting the column below the deck is what
-     guarantees they can never collide, at any phone size. */
-  .mfa-cards {
-    padding-top: calc(10px + var(--mfa-deck-w) * 1.5 + 14px);
+    --mfa-cover-h: max(190px, min(78vw, calc(100vh - 300px)));
+    --mfa-cover-h: max(190px, min(78vw, calc(100dvh - 300px)));
   }
 
   /* Bottom-align rather than centre. Dropping the stage's auto bottom margin
      leaves the heading's auto top margin as the only one, so all the free
      height collects above the pair and the sleeve sits directly over the
-     strip. On a phone that matters twice over: it buys the most possible
-     clearance from the corner deck, and a card in mid-flight is at its
-     largest around the middle of the screen — which is exactly the band this
-     empties out. */
+     strip — which shortens the flight from the thumb doing the changing. */
   .mfa-cards__stage {
     margin-bottom: 0;
   }

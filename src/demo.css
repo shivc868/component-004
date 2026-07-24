@@ -9,9 +9,9 @@ body {
   margin: 0;
   color-scheme: dark;
   color: var(--mfa-ink);
-  /* matches the bottom of the component's own gradient, so any overscroll
-     rubber-banding doesn't reveal a white band */
-  background: var(--mfa-sky-bottom);
+  /* matches the component's own backdrop, so any overscroll rubber-banding
+     doesn't reveal a white band */
+  background: var(--mfa-sky);
   font-family: var(--mfa-sans);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
