@@ -15,33 +15,33 @@
   <body>
     <div id="mfa-app">
       <section class="mfa-cards">
-        <!-- both of these are driven by whichever tile is active; see main.js -->
-        <h1 class="mfa-cards__title">Ava Bennett</h1>
+        <!-- Name and designation: both are driven by whichever tile is active;
+             main.js rewrites their text on every change. -->
+        <div class="mfa-cards__intro">
+          <h1 class="mfa-cards__title">Ava Bennett</h1>
+          <p class="mfa-cards__role">Head of Design</p>
+        </div>
 
         <!-- The active team member's photo. Only the resting card is authored
              here — main.js clones it into a small pool of layers so each change
              can own a layer for the whole of its flight from the dock. -->
         <div class="mfa-cards__stage">
           <div class="mfa-cards__card">
-            <div class="mfa-cards__card-flip">
-              <figure class="mfa-cards__face">
-                <img
-                  class="mfa-cards__art"
-                  src="https://i.pravatar.cc/600?img=1"
-                  alt="Ava Bennett"
-                />
-              </figure>
-              <!-- unused now the card flies rather than flips; see style.css -->
-              <div class="mfa-cards__face-back" aria-hidden="true"></div>
-            </div>
+            <figure class="mfa-cards__face">
+              <img
+                class="mfa-cards__art"
+                src="https://i.pravatar.cc/600?img=1"
+                alt="Ava Bennett"
+              />
+            </figure>
           </div>
         </div>
 
-        <!-- dock: one button per team member. data-title is the name shown in
-             the heading and hover label; data-cover is the full-size photo the
-             card flies in. The thumb <img> and the cover share the same photo
-             (same pravatar id) so the little tile grows seamlessly into the
-             big card. Swap these URLs for your own team's names and photos. -->
+        <!-- dock: one button per team member. data-title / data-role feed the
+             intro block above; data-cover is the full-size photo the card flies
+             in. The thumb <img> and the cover share the same photo (same
+             pravatar id) so the little tile grows seamlessly into the big card.
+             Swap all of this for your own team. -->
         <ul class="mfa-cards__dock">
             <!-- The travelling ring and label. Both are <li> because <ul> only
                  accepts <li> children, but they're absolutely positioned so
@@ -56,6 +56,7 @@
                 type="button"
                 aria-current="true"
                 data-title="Ava Bennett"
+                data-role="Head of Design"
                 data-cover="https://i.pravatar.cc/600?img=1"
               >
                 <img src="https://i.pravatar.cc/150?img=1" alt="Ava Bennett" />
@@ -66,6 +67,7 @@
                 class="mfa-cards__thumb"
                 type="button"
                 data-title="Marcus Reid"
+                data-role="Principal Engineer"
                 data-cover="https://i.pravatar.cc/600?img=2"
               >
                 <img src="https://i.pravatar.cc/150?img=2" alt="Marcus Reid" />
@@ -76,6 +78,7 @@
                 class="mfa-cards__thumb"
                 type="button"
                 data-title="Priya Nair"
+                data-role="Product Manager"
                 data-cover="https://i.pravatar.cc/600?img=3"
               >
                 <img src="https://i.pravatar.cc/150?img=3" alt="Priya Nair" />
@@ -86,6 +89,7 @@
                 class="mfa-cards__thumb"
                 type="button"
                 data-title="Diego Santos"
+                data-role="iOS Engineer"
                 data-cover="https://i.pravatar.cc/600?img=4"
               >
                 <img src="https://i.pravatar.cc/150?img=4" alt="Diego Santos" />
@@ -96,6 +100,7 @@
                 class="mfa-cards__thumb"
                 type="button"
                 data-title="Hannah Cole"
+                data-role="UX Researcher"
                 data-cover="https://i.pravatar.cc/600?img=5"
               >
                 <img src="https://i.pravatar.cc/150?img=5" alt="Hannah Cole" />
@@ -106,6 +111,7 @@
                 class="mfa-cards__thumb"
                 type="button"
                 data-title="Kenji Tanaka"
+                data-role="Data Scientist"
                 data-cover="https://i.pravatar.cc/600?img=6"
               >
                 <img src="https://i.pravatar.cc/150?img=6" alt="Kenji Tanaka" />
@@ -116,6 +122,7 @@
                 class="mfa-cards__thumb"
                 type="button"
                 data-title="Zara Okafor"
+                data-role="Engineering Manager"
                 data-cover="https://i.pravatar.cc/600?img=7"
               >
                 <img src="https://i.pravatar.cc/150?img=7" alt="Zara Okafor" />
@@ -126,6 +133,7 @@
                 class="mfa-cards__thumb"
                 type="button"
                 data-title="Liam Walsh"
+                data-role="Backend Engineer"
                 data-cover="https://i.pravatar.cc/600?img=8"
               >
                 <img src="https://i.pravatar.cc/150?img=8" alt="Liam Walsh" />
@@ -136,6 +144,7 @@
                 class="mfa-cards__thumb"
                 type="button"
                 data-title="Sofia Rossi"
+                data-role="Creative Director"
                 data-cover="https://i.pravatar.cc/600?img=9"
               >
                 <img src="https://i.pravatar.cc/150?img=9" alt="Sofia Rossi" />
@@ -146,6 +155,7 @@
                 class="mfa-cards__thumb"
                 type="button"
                 data-title="Omar Haddad"
+                data-role="DevOps Lead"
                 data-cover="https://i.pravatar.cc/600?img=10"
               >
                 <img src="https://i.pravatar.cc/150?img=10" alt="Omar Haddad" />
@@ -156,6 +166,7 @@
                 class="mfa-cards__thumb"
                 type="button"
                 data-title="Chloe Martin"
+                data-role="Content Strategist"
                 data-cover="https://i.pravatar.cc/600?img=11"
               >
                 <img src="https://i.pravatar.cc/150?img=11" alt="Chloe Martin" />
@@ -166,6 +177,7 @@
                 class="mfa-cards__thumb"
                 type="button"
                 data-title="Noah Kim"
+                data-role="Frontend Engineer"
                 data-cover="https://i.pravatar.cc/600?img=12"
               >
                 <img src="https://i.pravatar.cc/150?img=12" alt="Noah Kim" />
@@ -176,6 +188,7 @@
                 class="mfa-cards__thumb"
                 type="button"
                 data-title="Isabella Ferreira"
+                data-role="Marketing Lead"
                 data-cover="https://i.pravatar.cc/600?img=13"
               >
                 <img src="https://i.pravatar.cc/150?img=13" alt="Isabella Ferreira" />
@@ -186,6 +199,7 @@
                 class="mfa-cards__thumb"
                 type="button"
                 data-title="Ethan Brooks"
+                data-role="QA Engineer"
                 data-cover="https://i.pravatar.cc/600?img=14"
               >
                 <img src="https://i.pravatar.cc/150?img=14" alt="Ethan Brooks" />
@@ -196,6 +210,7 @@
                 class="mfa-cards__thumb"
                 type="button"
                 data-title="Mei Lin"
+                data-role="Motion Designer"
                 data-cover="https://i.pravatar.cc/600?img=15"
               >
                 <img src="https://i.pravatar.cc/150?img=15" alt="Mei Lin" />
@@ -206,6 +221,7 @@
                 class="mfa-cards__thumb"
                 type="button"
                 data-title="Gabriel Silva"
+                data-role="Security Engineer"
                 data-cover="https://i.pravatar.cc/600?img=16"
               >
                 <img src="https://i.pravatar.cc/150?img=16" alt="Gabriel Silva" />
@@ -216,6 +232,7 @@
                 class="mfa-cards__thumb"
                 type="button"
                 data-title="Amara Diallo"
+                data-role="People Operations"
                 data-cover="https://i.pravatar.cc/600?img=17"
               >
                 <img src="https://i.pravatar.cc/150?img=17" alt="Amara Diallo" />
@@ -226,6 +243,7 @@
                 class="mfa-cards__thumb"
                 type="button"
                 data-title="Lucas Meyer"
+                data-role="Sales Director"
                 data-cover="https://i.pravatar.cc/600?img=18"
               >
                 <img src="https://i.pravatar.cc/150?img=18" alt="Lucas Meyer" />
@@ -236,6 +254,7 @@
                 class="mfa-cards__thumb"
                 type="button"
                 data-title="Yuki Sato"
+                data-role="Machine Learning Engineer"
                 data-cover="https://i.pravatar.cc/600?img=19"
               >
                 <img src="https://i.pravatar.cc/150?img=19" alt="Yuki Sato" />
@@ -246,6 +265,7 @@
                 class="mfa-cards__thumb"
                 type="button"
                 data-title="Elena Petrova"
+                data-role="Design Systems Lead"
                 data-cover="https://i.pravatar.cc/600?img=20"
               >
                 <img src="https://i.pravatar.cc/150?img=20" alt="Elena Petrova" />
@@ -256,6 +276,7 @@
                 class="mfa-cards__thumb"
                 type="button"
                 data-title="Tomás Herrera"
+                data-role="Solutions Architect"
                 data-cover="https://i.pravatar.cc/600?img=21"
               >
                 <img src="https://i.pravatar.cc/150?img=21" alt="Tomás Herrera" />
@@ -266,6 +287,7 @@
                 class="mfa-cards__thumb"
                 type="button"
                 data-title="Aisha Rahman"
+                data-role="Customer Success"
                 data-cover="https://i.pravatar.cc/600?img=22"
               >
                 <img src="https://i.pravatar.cc/150?img=22" alt="Aisha Rahman" />
@@ -276,6 +298,7 @@
                 class="mfa-cards__thumb"
                 type="button"
                 data-title="Daniel Novak"
+                data-role="Platform Engineer"
                 data-cover="https://i.pravatar.cc/600?img=23"
               >
                 <img src="https://i.pravatar.cc/150?img=23" alt="Daniel Novak" />
@@ -286,6 +309,7 @@
                 class="mfa-cards__thumb"
                 type="button"
                 data-title="Grace Wong"
+                data-role="Finance Lead"
                 data-cover="https://i.pravatar.cc/600?img=24"
               >
                 <img src="https://i.pravatar.cc/150?img=24" alt="Grace Wong" />
@@ -296,6 +320,7 @@
                 class="mfa-cards__thumb"
                 type="button"
                 data-title="Felix Andersen"
+                data-role="Growth Marketer"
                 data-cover="https://i.pravatar.cc/600?img=25"
               >
                 <img src="https://i.pravatar.cc/150?img=25" alt="Felix Andersen" />
@@ -306,6 +331,7 @@
                 class="mfa-cards__thumb"
                 type="button"
                 data-title="Nadia Karim"
+                data-role="Head of Operations"
                 data-cover="https://i.pravatar.cc/600?img=26"
               >
                 <img src="https://i.pravatar.cc/150?img=26" alt="Nadia Karim" />

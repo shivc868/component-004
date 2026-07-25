@@ -16,14 +16,9 @@
   --mfa-sky: #181818;
   --mfa-bg: #686a6d; /* surfaces sitting on the sky */
   --mfa-ink: #e9f1fb; /* pale — headings, the label pill, the ring */
+  --mfa-ink-soft: rgba(233, 241, 251, 0.72); /* designation label */
   --mfa-on-ink: #0a1626; /* dark text sitting on top of that pale pill */
-  --mfa-chip: #1a2942;
-
-  /* Card back stays paper-light: a real deck has light-backed cards, and on a
-     dark table that is exactly how it should read. These underlay the card
-     back artwork, which is itself pale. */
-  --mfa-card-back: #eaf1fa;
-  --mfa-card-line: rgba(10, 42, 94, 0.12);
+  --mfa-chip: #1a2942; /* fills the photo frame until the image loads */
 
   --mfa-sans: "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
 
@@ -31,13 +26,13 @@
      that flies up keeps its shape all the way to the centre. Height drives it
      and width simply matches. Both terms are relative, so it keeps growing
      with the screen instead of stopping at a fixed ceiling — `40vw` governs
-     wide-and-short viewports, `54dvh` tall ones, and whichever is scarcer
-     wins. The `dvh` term is also what keeps the component on one screen: on a
-     short viewport the photo shrinks rather than pushing the dock below the
-     fold. The outer max() is the floor for narrow phones, where 40vw goes
-     tiny. */
-  --mfa-cover-h: max(240px, min(40vw, 54vh));
-  --mfa-cover-h: max(240px, min(40vw, 54dvh));
+     wide-and-short viewports, `52dvh` tall ones, and whichever is scarcer
+     wins. The `dvh` term is also what keeps the component on one screen: it
+     leaves room for the name/role/bio block above and the dock below, so on a
+     short viewport the photo shrinks rather than pushing either off the fold.
+     The outer max() is the floor for narrow phones, where 40vw goes tiny. */
+  --mfa-cover-h: max(240px, min(40vw, 52vh));
+  --mfa-cover-h: max(240px, min(40vw, 52dvh));
   --mfa-cover-w: var(--mfa-cover-h);
   --mfa-thumb: clamp(48px, 4.2vw, 62px);
   /* Dock magnification. `peak` is the scale directly under the cursor;
@@ -115,12 +110,25 @@
   color: var(--mfa-on-ink);
 }
 
-/* ------------------------------------------------------------- heading -- */
+/* ------------------------------------------------------------- intro -- */
+
+/* Name and designation as one block. The auto top margin lives here now and
+   pairs with the stage's auto bottom margin, so this whole block and the photo
+   centre together as one group with the strip pinned below. Capped in width so
+   a long name or title wraps tidily rather than running the screen's width. */
+.mfa-cards__intro {
+  margin: auto 0 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  max-width: min(46ch, 92vw);
+  padding: 0 16px;
+  text-align: center;
+}
 
 .mfa-cards__title {
-  /* auto top margin — pairs with the stage's auto bottom margin so the
-     heading and sleeve centre together as one group */
-  margin: auto 0 0;
+  margin: 0;
   font-size: clamp(26px, 3.2vw, 42px);
   /* the reference sets its headings heavy, so 700 rather than 600 */
   font-weight: 700;
@@ -128,19 +136,18 @@
   /* Eased off from -0.045em: Plus Jakarta Sans has wider, rounder bowls than
      Instrument Sans and starts to collide on double letters at that value. */
   letter-spacing: -0.032em;
-  text-align: center;
   color: var(--mfa-ink);
 }
 
-/* The card back. One 848x1264 artwork carrying the hatch, the inset frame and
-   the monogram — everything that used to be built from gradients and a
-   pseudo-element here. The 2:3 source matches the card box exactly, so
-   `cover` crops nothing. `--mfa-card-back` stays as the paint underneath, so
-   the card is never a blank hole while the image is still loading. */
-.mfa-cards__face-back {
-  background:
-    url("/card-back.webp") center / cover no-repeat,
-    var(--mfa-card-back);
+/* The designation, set as a tracked upper-case label so it reads as a title
+   rather than a second line of the name. */
+.mfa-cards__role {
+  margin: 0;
+  font-size: clamp(11px, 1.05vw, 13px);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--mfa-ink-soft);
 }
 
 /* --------------------------------------------------------------- cover -- */
@@ -187,44 +194,18 @@
   transform-origin: 50% 50%;
 }
 
-/* Holds the two faces. The back is never seen now that the card flies rather
-   than flips, but the structure stays so the flip could be brought back
-   without reshaping the DOM. */
-.mfa-cards__card-flip {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  transform-style: preserve-3d;
-}
-
-/* No drop shadow on either face. The centre holds a stack of cards landing on
-   identical pixels, so every shadow compounded with the ones beneath it into
-   a dark halo around the sleeve — the artwork reads cleaner without any. */
-.mfa-cards__face,
-.mfa-cards__face-back {
+/* The photo's rounded frame. No drop shadow: the centre holds a stack of
+   cards landing on identical pixels, so any shadow would compound with the
+   ones beneath into a dark halo — the artwork reads cleaner without one. The
+   chip fill shows for the instant before the image loads, so the card is never
+   a blank hole. */
+.mfa-cards__face {
   position: absolute;
   inset: 0;
   margin: 0;
   border-radius: var(--mfa-cover-radius);
   overflow: hidden;
-  /* without this both faces render at once and the back shows through */
-  backface-visibility: hidden;
-}
-
-/* The back is paper-light, so it still needs a hairline to hold an edge. The
-   artwork front defines its own. */
-.mfa-cards__face-back {
-  box-shadow: inset 0 0 0 1px var(--mfa-card-line);
-}
-
-.mfa-cards__face {
   background: var(--mfa-chip);
-}
-
-/* turned away so its backface stays hidden; the flying card only ever shows
-   its front */
-.mfa-cards__face-back {
-  transform: rotateY(180deg);
 }
 
 .mfa-cards__art {
@@ -401,22 +382,16 @@
    collapses onto the 240px floor no matter how much height is going spare.
 
    Here width drives it instead — `78vw`, so the square photo keeps a margin
-   either side — and height only caps it. The cap is `100dvh - 300px`, not a
-   dvh fraction, because what the photo competes with — the page padding,
-   heading, gap and strip — is a fixed pixel stack, so a proportional cap
-   over- or under-shoots depending on phone height. */
+   either side — and height only caps it. The cap is `100dvh - 340px`, not a
+   dvh fraction, because what the photo competes with — the page padding, the
+   name/role/bio block, the gap and the strip — is a fixed pixel stack, so a
+   proportional cap over- or under-shoots depending on phone height. The intro
+   and photo centre via their auto margins (no bottom-align override), with the
+   strip pinned below. */
 @media (max-width: 640px) {
   :root {
-    --mfa-cover-h: max(190px, min(78vw, calc(100vh - 300px)));
-    --mfa-cover-h: max(190px, min(78vw, calc(100dvh - 300px)));
-  }
-
-  /* Bottom-align rather than centre. Dropping the stage's auto bottom margin
-     leaves the heading's auto top margin as the only one, so all the free
-     height collects above the pair and the sleeve sits directly over the
-     strip — which shortens the flight from the thumb doing the changing. */
-  .mfa-cards__stage {
-    margin-bottom: 0;
+    --mfa-cover-h: max(190px, min(78vw, calc(100vh - 340px)));
+    --mfa-cover-h: max(190px, min(78vw, calc(100dvh - 340px)));
   }
 }
 

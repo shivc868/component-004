@@ -162,6 +162,7 @@ function initDock(list) {
 
   const cards = list.closest(".mfa-cards");
   const title = cards?.querySelector(".mfa-cards__title");
+  const role = cards?.querySelector(".mfa-cards__role");
   const turner = createTurner(cards);
 
   // a sweep crosses the whole strip in a fraction of a second, so the covers
@@ -192,6 +193,7 @@ function initDock(list) {
 
     const name = tiles[i].dataset.title;
     if (title && name) title.textContent = name;
+    if (role) role.textContent = tiles[i].dataset.role || "";
     // the tile it flies from is this same active thumbnail — the card lifts
     // off it and grows into the centre, and the outgoing centre card stays
     // beneath until the new one has covered it
