@@ -1,18 +1,4 @@
-/* ==========================================================================
-   CARDS COMPONENT — this is the file you copy into your project
-   --------------------------------------------------------------------------
-   Every class, state class and design token is namespaced with `mfa-` /
-   `--mfa-` so nothing here can collide with the styles already on your site.
-   The showcase page around it (page shell, container) lives in demo.css and
-   should NOT be copied.
-   ========================================================================== */
-
 :root {
-  /* Palette: pure black backdrop, near-black surfaces, pale ink. `--mfa-ink`
-     is the foreground of the theme, not a colour name — inverting it and
-     `--mfa-on-ink` is what carries the whole component from light to dark,
-     because the heading, the hover label's pill, the travelling ring, the
-     focus outline and the selection all resolve from that one pair. */
   --mfa-sky: #181818;
   --mfa-bg: #686a6d; /* surfaces sitting on the sky */
   --mfa-ink: #e9f1fb; /* pale — headings, the label pill, the ring */
@@ -22,55 +8,25 @@
 
   --mfa-sans: "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
 
-  /* The photo is square, the same 1:1 as the dock thumbnails, so the tile
-     that flies up keeps its shape all the way to the centre. Height drives it
-     and width simply matches. Both terms are relative, so it keeps growing
-     with the screen instead of stopping at a fixed ceiling — `40vw` governs
-     wide-and-short viewports, `52dvh` tall ones, and whichever is scarcer
-     wins. The `dvh` term is also what keeps the component on one screen: it
-     leaves room for the name/role/bio block above and the dock below, so on a
-     short viewport the photo shrinks rather than pushing either off the fold.
-     The outer max() is the floor for narrow phones, where 40vw goes tiny. */
   --mfa-cover-h: max(240px, min(40vw, 52vh));
   --mfa-cover-h: max(240px, min(40vw, 52dvh));
   --mfa-cover-w: var(--mfa-cover-h);
   --mfa-thumb: clamp(48px, 4.2vw, 62px);
-  /* Dock magnification. `peak` is the scale directly under the cursor;
-     `radius` is the falloff reach in item-widths. JS reads both from here so
-     the headroom reserved above the strip always matches the real peak. */
+
   --mfa-dock-peak: 1.6;
   --mfa-dock-radius: 2.6;
-  /* gap to the viewport bottom; shared by the strip padding and the ring so
-     the two can't drift apart */
+
   --mfa-strip-bottom: 20px;
-  /* Gap the end thumbnails keep from the screen edge when the strip is panned
-     to a limit. It has to clear more than the resting 14px, because the tile
-     the cursor is over there is blown up to fisheye size and carries its
-     selection ring — so this reserves the 14px gap PLUS that magnified reach,
-     which is why it is derived from the thumb size, the peak and the ring pad
-     rather than being a flat number. Only ever seen as that ~14px gap at a
-     panned end; when the strip fits it is centred and this is invisible. */
+
   --mfa-strip-side: calc(
     14px + var(--mfa-ring-pad) + var(--mfa-thumb) * (var(--mfa-dock-peak) - 1) *
       0.5
   );
-  /* Corner rounding, tighter than a typical card so the artwork stays the
-     shape it was cropped to. The ring derives from the tile value and the
-     deck from the cover one, so these two drive every rounded edge. */
   --mfa-tile-radius: 6px;
   --mfa-cover-radius: 12px;
-  /* How far outside the tile the travelling ring sits. Border-box sizing
-     means the border eats into this, so 5px keeps a ~3px breathing gap
-     against the 2px border. */
   --mfa-ring-pad: 5px;
-  /* same navy as the hover label's pill, so the two markers that follow the
-     cursor read as one thing rather than two competing accents */
   --mfa-ring-color: var(--mfa-ink);
-  /* gap between the tile top and the hover label, read by JS */
   --mfa-label-gap: 12px;
-  /* headroom the label needs above the peak-scaled tile: the gap plus the
-     label's own height. Folded into the strip's padding-top, since the
-     scroll container would otherwise clip it. */
   --mfa-label-room: 52px;
 }
 
@@ -82,8 +38,6 @@
 .mfa-cards {
   color-scheme: dark;
   color: var(--mfa-ink);
-  /* Flat pure black — no image, no gradient, so there is nothing to load in
-     and nothing to shift once it does. */
   background-color: var(--mfa-sky);
   font-family: var(--mfa-sans);
   font-synthesis: none;
@@ -97,11 +51,7 @@
   position: relative; /* containing block for the corner card */
   min-height: 100vh;
   min-height: 100dvh;
-  /* no bottom padding — the strip's own padding is the gap to the edge */
   padding: clamp(18px, 3vh, 28px) 0 0;
-  /* insurance: nothing should escape sideways, and a stray horizontal
-     scrollbar would knock the centred column off-axis. `clip` not `hidden`,
-     so it doesn't become a scroll container. */
   overflow-x: clip;
 }
 
@@ -112,10 +62,6 @@
 
 /* ------------------------------------------------------------- intro -- */
 
-/* Name and designation as one block. The auto top margin lives here now and
-   pairs with the stage's auto bottom margin, so this whole block and the photo
-   centre together as one group with the strip pinned below. Capped in width so
-   a long name or title wraps tidily rather than running the screen's width. */
 .mfa-cards__intro {
   margin: auto 0 0;
   display: flex;
@@ -133,9 +79,7 @@
   /* the reference sets its headings heavy, so 700 rather than 600 */
   font-weight: 700;
   line-height: 1.05;
-  /* Eased off from -0.045em: Plus Jakarta Sans has wider, rounder bowls than
-     Instrument Sans and starts to collide on double letters at that value. */
-  letter-spacing: -0.032em;
+  letter-spacing: -0.042em;
   color: var(--mfa-ink);
 }
 
@@ -144,9 +88,9 @@
 .mfa-cards__role {
   margin: 0;
   font-size: clamp(11px, 1.05vw, 13px);
-  font-weight: 600;
+  font-weight: 200;
   text-transform: uppercase;
-  letter-spacing: 0.09em;
+  letter-spacing: 0.3em;
   color: var(--mfa-ink-soft);
 }
 
@@ -158,47 +102,21 @@
      browsers disagree about */
   height: var(--mfa-cover-h);
   width: var(--mfa-cover-w);
-  position: relative; /* stacking context for the stacked card layers */
-  /* A card in flight starts scaled down and translated all the way to its
-     dock thumbnail, so it overflows the stage downward. The stage must paint
-     ABOVE the dock for that to read as the tile lifting toward the centre —
-     the dock is later in the DOM and would otherwise cover the incoming card.
-     visible overflow lets the shrunk card show outside the stage box. */
+  position: relative;
   z-index: 1;
   overflow: visible;
-  /* ...but painting above the dock must NOT mean catching its pointer events.
-     A flight overflows a big card down across the strip, and the stage's own
-     box sits over the dock's magnification headroom — with pointer-events on,
-     either would swallow the hover and freeze the fisheye until the cursor
-     moved off. Nothing in here is interactive (all input is on the dock
-     buttons), so let every pointer event fall straight through to the dock. */
   pointer-events: none;
-  /* Fixed gap under the heading, auto below. The free height splits between
-     this auto margin and the heading's auto top margin, so the pair centres
-     as one block and the strip stays pinned to the bottom. The dock must
-     have no auto margin of its own — a third one would split the free space
-     three ways and lift the group. */
+
   margin: clamp(16px, 3vh, 30px) 0 auto;
 }
 
-/* A pool of these is cloned by main.js and stacked on the exact same box —
-   every flight needs a layer of its own, so several can be in the air at once
-   during a fast sweep of the dock. Absolute so they stack. main.js flies each
-   one in from its dock thumbnail with a translate + scale on this element. */
 .mfa-cards__card {
   position: absolute;
   inset: 0;
   will-change: transform;
-  /* card grows from a small thumbnail, so anchor the scale at the centre and
-     let it settle there rather than drifting off a corner */
   transform-origin: 50% 50%;
 }
 
-/* The photo's rounded frame. No drop shadow: the centre holds a stack of
-   cards landing on identical pixels, so any shadow would compound with the
-   ones beneath into a dark halo — the artwork reads cleaner without one. The
-   chip fill shows for the instant before the image loads, so the card is never
-   a blank hole. */
 .mfa-cards__face {
   position: absolute;
   inset: 0;
@@ -221,20 +139,12 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  /* `center` for old browsers; `safe center` then centres the strip while it
-     fits and degrades to flex-start once it overflows — plain `center` would
-     push the leading thumbs into unscrollable negative space. */
+
   justify-content: center;
   justify-content: safe center;
-  /* tiles grow upward out of a fixed baseline, like the Dock */
   align-items: flex-end;
   width: 100%;
   margin: 0;
-  /* Top reserves the magnification headroom: scaling is a transform, so layout
-     height stays at --mfa-thumb and the grown tile would be clipped by the
-     scroll container. Origin is bottom centre, so all growth is upward. Bottom
-     is the gap to the viewport edge; the sides keep the panned end tiles clear
-     of the screen edge — see --mfa-strip-side. */
   padding-top: calc(
     var(--mfa-thumb) * (var(--mfa-dock-peak) - 1) + var(--mfa-label-room)
   );
@@ -286,8 +196,6 @@
   transform: translateY(-3px);
 }
 
-/* No-JS / coarse-pointer fallback: the ring is baked onto the active tile as
-   a box-shadow. In dock mode the travelling ring element replaces it. */
 .mfa-cards__thumb.mfa-is-active {
   opacity: 1;
   transform: scale(1.1);
@@ -298,10 +206,6 @@
 
 /* ------------------------------------------------------ travelling ring -- */
 
-/* One ring for the whole strip. JS sizes and positions it each frame onto
-   whichever tile has focus — the hovered one, or the active one when the
-   pointer is away. `bottom` is derived from the strip padding so it stays
-   pinned to the tile baseline while tiles grow upward. */
 .mfa-cards__ring {
   position: absolute;
   left: 0;
@@ -312,9 +216,6 @@
   border-radius: calc(var(--mfa-tile-radius) + var(--mfa-ring-pad));
   pointer-events: none;
   opacity: 0;
-  /* The tiles carry an inline `transform`, which makes each one a stacking
-     context painted in DOM order — so without this the ring (first child)
-     renders underneath them. */
   z-index: 2;
 }
 
@@ -324,10 +225,6 @@
 
 /* --------------------------------------------------------- hover label -- */
 
-/* Sits on the same baseline as the tiles, then JS lifts it clear of whichever
-   tile has focus with a translateY — so it rides the tile as it grows rather
-   than sitting at a fixed height. The X translate uses a -50% term so it
-   self-centres without JS having to measure the text. */
 .mfa-cards__label {
   position: absolute;
   left: 0;
@@ -351,7 +248,6 @@
   opacity: 1;
 }
 
-/* the travelling ring takes over, so drop the baked-on one */
 .mfa-dock-on .mfa-cards__thumb.mfa-is-active {
   box-shadow: none;
 }
@@ -361,11 +257,6 @@
   outline-offset: 4px;
 }
 
-/* Dock mode. JS writes `transform` inline every frame, so the transition
-   above has to go or each frame would queue its own 0.3s tween and the
-   magnification would lag the cursor badly. The CSS hover/active transforms
-   stay as the fallback for coarse pointers and no-JS, where this class is
-   never added. Easing in dock mode is done by the JS smoothing instead. */
 .mfa-dock-on .mfa-cards__thumb {
   transition:
     opacity 0.3s ease,
@@ -377,17 +268,6 @@
 
 /* ------------------------------------------------------------- mobile -- */
 
-/* On a phone the shared sizing leaves the photo tiny and the screen mostly
-   empty: `34vw` is the scarcer term at this width, so it wins the min() and
-   collapses onto the 240px floor no matter how much height is going spare.
-
-   Here width drives it instead — `78vw`, so the square photo keeps a margin
-   either side — and height only caps it. The cap is `100dvh - 340px`, not a
-   dvh fraction, because what the photo competes with — the page padding, the
-   name/role/bio block, the gap and the strip — is a fixed pixel stack, so a
-   proportional cap over- or under-shoots depending on phone height. The intro
-   and photo centre via their auto margins (no bottom-align override), with the
-   strip pinned below. */
 @media (max-width: 640px) {
   :root {
     --mfa-cover-h: max(190px, min(78vw, calc(100vh - 340px)));

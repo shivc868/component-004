@@ -1,142 +1,72 @@
 import "./style.css";
-import "./demo.css"; // showcase page only — not part of the component
-import gsap from "gsap";
+import gsapDefault from "gsap";
 
-// GSAP is used without any global config (no registerPlugin / defaults /
-// ticker changes) so it can share a page with a host app's own GSAP.
-
-const POOL = 20; // reusable card layers, so overlapping flights each get one
-const FLY_MIN = 0.34;
-const FLY_MAX = 0.72;
-const PACE = 2.4; // gap between changes (ms) -> flight length (s)
+const POOL = 20; // reusable card layers so overlapping flights each get one
+const FLY_MIN = 0.34; // shortest flight (s)
+const FLY_MAX = 0.72; // longest flight (s)
+const PACE = 2.4; // hover gap (ms) -> flight length (s)
 const EASE_FLY = "power2.out";
-
-const ACTIVE_REST = 1.1; // matches .mfa-is-active in the CSS
+const ACTIVE_REST = 1.1; // must match the .mfa-is-active scale in the CSS
 const SMOOTHING = 0.24; // fisheye easing
 const PAN_SMOOTHING = 0.18; // hover-pan easing
-const RING_TRAVEL = 0.6;
+const RING_TRAVEL = 0.6; // travelling-ring easing
 const EPSILON = 0.0005;
 
-const css = getComputedStyle(document.documentElement);
-const token = (name, fallback) => {
-  const v = parseFloat(css.getPropertyValue(name));
-  return Number.isFinite(v) ? v : fallback;
-};
+/**
+ * @param {Element|string} [target] a `.mfa-cards` element, a CSS selector, or
+ *   omitted to wire up every `.mfa-cards` on the page.
+ * @param {{ gsap?: object }} [options] pass your app's own gsap instance to
+ *   share one copy; otherwise the bundled gsap is used.
+ * @returns {{ destroy(): void }} call destroy() on unmount to remove every
+ *   listener and stop the animation loop.
+ */
+export function initMfaCards(target, options = {}) {
+  const gsap = options.gsap || gsapDefault;
+  const roots =
+    target instanceof Element
+      ? [target]
+      : [
+          ...document.querySelectorAll(
+            typeof target === "string" ? target : ".mfa-cards",
+          ),
+        ];
 
-// -- Centre photo -----------------------------------------------------------
-// A pool of stacked layers. Each change flies one layer in from its dock
-// thumbnail: it starts scaled/translated onto the tile, then animates to fill
-// the stage, so the little photo looks like it lifts off and grows.
-function createTurner(root) {
-  const stage = root?.querySelector(".mfa-cards__stage");
-  const seed = stage?.querySelector(".mfa-cards__card");
-  if (!stage || !seed) return { play() {} };
+  const made = roots
+    .filter((r) => r.querySelector(".mfa-cards__dock") && !r.dataset.mfaReady)
+    .map((r) => setup(r, gsap));
 
-  const reduced = matchMedia("(prefers-reduced-motion: reduce)");
-
-  const cards = [seed];
-  for (let i = 1; i < POOL; i++) {
-    const clone = seed.cloneNode(true);
-    stage.appendChild(clone);
-    cards.push(clone);
-  }
-
-  let z = POOL;
-  let last = 0;
-  const flights = new Map();
-
-  const setArt = (card, src, alt) => {
-    const img = card.querySelector(".mfa-cards__art");
-    if (img) {
-      img.src = src;
-      img.alt = alt || "";
-    }
-  };
-
-  // Seed on top (its photo is on show); clones hidden beneath, ready to reuse.
-  cards.forEach((card, i) => {
-    card.style.zIndex = String(i === 0 ? POOL : i);
-    gsap.set(card, {
-      opacity: i === 0 ? 1 : 0,
-      x: 0,
-      y: 0,
-      scaleX: 1,
-      scaleY: 1,
-    });
-  });
-  cards.push(cards.shift());
-
-  // Transform that lays the stage box exactly over the source thumbnail.
-  const flightFrom = (el) => {
-    const s = stage.getBoundingClientRect();
-    const t = el.getBoundingClientRect();
-    if (!s.width || !t.width) return null;
-    return {
-      x: t.left + t.width / 2 - (s.left + s.width / 2),
-      y: t.top + t.height / 2 - (s.top + s.height / 2),
-      scaleX: t.width / s.width,
-      scaleY: t.height / s.height,
-    };
-  };
-
-  function play(src, alt, fromEl) {
-    if (!src) return;
-
-    const card = cards.shift();
-    cards.push(card);
-    setArt(card, src, alt);
-    card.style.zIndex = String(++z); // latest change always lands on top
-
-    flights.get(card)?.kill(); // a reused layer may still owe us a landing
-    flights.delete(card);
-    gsap.killTweensOf(card);
-
-    const from = fromEl && !reduced.matches ? flightFrom(fromEl) : null;
-    if (!from) {
-      gsap.set(card, { opacity: 1, x: 0, y: 0, scaleX: 1, scaleY: 1 });
-      return;
-    }
-
-    const now = performance.now();
-    const gap = last ? now - last : Infinity;
-    last = now;
-    const dur = gsap.utils.clamp(FLY_MIN, FLY_MAX, (gap / 1000) * PACE);
-
-    // Hurry any cards still in the air so a fast sweep lands roughly in order.
-    const allowed = dur * 0.85;
-    for (const t of flights.values()) {
-      const left = t.duration() - t.time();
-      if (left / t.timeScale() > allowed) t.timeScale(left / allowed);
-    }
-
-    gsap.set(card, { opacity: 1, ...from });
-    const tl = gsap.timeline({ onComplete: () => flights.delete(card) });
-    flights.set(card, tl);
-    tl.to(card, {
-      x: 0,
-      y: 0,
-      scaleX: 1,
-      scaleY: 1,
-      duration: dur,
-      ease: EASE_FLY,
-    });
-  }
-
-  return { play };
+  return { destroy: () => made.forEach((m) => m.destroy()) };
 }
 
-// -- Dock -------------------------------------------------------------------
-// macOS-style fisheye strip. Hover magnifies tiles and sets the active member;
-// when the strip is wider than the screen it pans to follow the cursor.
-function initDock(list) {
-  if (!list) return;
+function setup(root, gsap) {
+  root.dataset.mfaReady = "1";
+  const list = root.querySelector(".mfa-cards__dock");
   const tiles = [...list.querySelectorAll(".mfa-cards__thumb")];
-  if (!tiles.length) return;
+  const title = root.querySelector(".mfa-cards__title");
+  const role = root.querySelector(".mfa-cards__role");
 
-  const root = list.closest(".mfa-cards");
-  const title = root?.querySelector(".mfa-cards__title");
-  const role = root?.querySelector(".mfa-cards__role");
-  const turner = createTurner(root);
+  const cs = getComputedStyle(root);
+  const token = (name, fallback) => {
+    const v = parseFloat(cs.getPropertyValue(name));
+    return Number.isFinite(v) ? v : fallback;
+  };
+
+  const turner = createTurner(root, gsap);
+
+  let destroyed = false;
+  let frame = 0;
+  const cleanups = [() => turner.destroy(), () => delete root.dataset.mfaReady];
+  const on = (el, ev, fn, opts) => {
+    el.addEventListener(ev, fn, opts);
+    cleanups.push(() => el.removeEventListener(ev, fn, opts));
+  };
+  function destroy() {
+    destroyed = true;
+    if (frame) cancelAnimationFrame(frame);
+    cleanups.forEach((fn) => fn());
+  }
+
+  if (!tiles.length) return { destroy };
 
   // Preload covers so a fast sweep never blanks the incoming photo.
   for (const t of tiles) if (t.dataset.cover) new Image().src = t.dataset.cover;
@@ -154,11 +84,11 @@ function initDock(list) {
     if (i < 0 || i === activeIndex) return;
     activeIndex = i;
     tiles.forEach((t, j) => {
-      const on = j === i;
-      t.classList.toggle("mfa-is-active", on);
-      if (on) t.setAttribute("aria-current", "true");
+      const active = j === i;
+      t.classList.toggle("mfa-is-active", active);
+      if (active) t.setAttribute("aria-current", "true");
       else t.removeAttribute("aria-current");
-      rest[j] = on ? ACTIVE_REST : 1;
+      rest[j] = active ? ACTIVE_REST : 1;
     });
 
     const name = tiles[i].dataset.title;
@@ -172,7 +102,7 @@ function initDock(list) {
   }
 
   // Tap works everywhere (touch has no hover), so wire it before the gate.
-  list.addEventListener("click", (e) => {
+  on(list, "click", (e) => {
     const hit = e.target.closest(".mfa-cards__thumb");
     if (!hit) return;
     setActive(tiles.indexOf(hit));
@@ -183,8 +113,12 @@ function initDock(list) {
   });
 
   // Everything below is hover-only.
-  if (!matchMedia("(pointer: fine)").matches) return;
-  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  if (
+    !matchMedia("(pointer: fine)").matches ||
+    matchMedia("(prefers-reduced-motion: reduce)").matches
+  ) {
+    return { destroy };
+  }
 
   const peak = token("--mfa-dock-peak", 1.6);
   const radiusInTiles = token("--mfa-dock-radius", 2.6);
@@ -203,7 +137,6 @@ function initDock(list) {
   let hoverIndex = null;
   let focusF = activeIndex; // ring position, in tile-index space
   let pointerX = null;
-  let frame = 0;
 
   // Rest-state row geometry plus pan bounds (maxScroll 0 means it all fits).
   let base = 0;
@@ -349,43 +282,44 @@ function initDock(list) {
           labelIndex = hoverIndex;
           label.textContent = tiles[hoverIndex].dataset.title || "";
         }
-        const on = hoverIndex !== null;
-        if (label.classList.contains("mfa-is-on") !== on)
-          label.classList.toggle("mfa-is-on", on);
+        const shown = hoverIndex !== null;
+        if (label.classList.contains("mfa-is-on") !== shown)
+          label.classList.toggle("mfa-is-on", shown);
       }
     }
 
-    if (moving) frame = requestAnimationFrame(render);
+    if (moving && !destroyed) frame = requestAnimationFrame(render);
   }
 
   function kick() {
-    if (frame) return;
+    if (frame || destroyed) return;
     clock = 0; // a long idle gap would otherwise make a huge first step
     frame = requestAnimationFrame(render);
   }
 
-  list.addEventListener("pointermove", (e) => {
+  on(list, "pointermove", (e) => {
     if (e.pointerType !== "mouse") return;
     pointerX = e.clientX;
     retarget();
     kick();
   });
-  list.addEventListener("pointerleave", () => {
+  on(list, "pointerleave", () => {
     pointerX = null;
     retarget();
     kick();
   });
-  list.addEventListener("scroll", () => {
+  on(list, "scroll", () => {
     retarget();
     kick();
   });
 
   const onResize = () => {
+    if (destroyed) return;
     measure();
     retarget();
     kick();
   };
-  window.addEventListener("resize", onResize);
+  on(window, "resize", onResize);
 
   measure();
   magnify = true;
@@ -394,7 +328,115 @@ function initDock(list) {
 
   // Fonts and thumbnails land after first paint and shift the row.
   document.fonts?.ready.then(onResize);
-  window.addEventListener("load", onResize);
+  on(window, "load", onResize);
+
+  return { destroy };
 }
 
-initDock(document.querySelector(".mfa-cards__dock"));
+// -- Centre photo -----------------------------------------------------------
+function createTurner(root, gsap) {
+  const stage = root.querySelector(".mfa-cards__stage");
+  const seed = stage?.querySelector(".mfa-cards__card");
+  if (!stage || !seed) return { play() {}, destroy() {} };
+
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)");
+
+  const cards = [seed];
+  const clones = [];
+  for (let i = 1; i < POOL; i++) {
+    const clone = seed.cloneNode(true);
+    stage.appendChild(clone);
+    cards.push(clone);
+    clones.push(clone);
+  }
+
+  let z = POOL;
+  let last = 0;
+  const flights = new Map();
+
+  const setArt = (card, src, alt) => {
+    const img = card.querySelector(".mfa-cards__art");
+    if (img) {
+      img.src = src;
+      img.alt = alt || "";
+    }
+  };
+
+  // Seed on top (its photo is on show); clones hidden beneath, ready to reuse.
+  cards.forEach((card, i) => {
+    card.style.zIndex = String(i === 0 ? POOL : i);
+    gsap.set(card, {
+      opacity: i === 0 ? 1 : 0,
+      x: 0,
+      y: 0,
+      scaleX: 1,
+      scaleY: 1,
+    });
+  });
+  cards.push(cards.shift());
+
+  // Transform that lays the stage box exactly over the source thumbnail.
+  const flightFrom = (el) => {
+    const s = stage.getBoundingClientRect();
+    const t = el.getBoundingClientRect();
+    if (!s.width || !t.width) return null;
+    return {
+      x: t.left + t.width / 2 - (s.left + s.width / 2),
+      y: t.top + t.height / 2 - (s.top + s.height / 2),
+      scaleX: t.width / s.width,
+      scaleY: t.height / s.height,
+    };
+  };
+
+  function play(src, alt, fromEl) {
+    if (!src) return;
+
+    const card = cards.shift();
+    cards.push(card);
+    setArt(card, src, alt);
+    card.style.zIndex = String(++z); // latest change always lands on top
+
+    flights.get(card)?.kill(); // a reused layer may still owe us a landing
+    flights.delete(card);
+    gsap.killTweensOf(card);
+
+    const from = fromEl && !reduced.matches ? flightFrom(fromEl) : null;
+    if (!from) {
+      gsap.set(card, { opacity: 1, x: 0, y: 0, scaleX: 1, scaleY: 1 });
+      return;
+    }
+
+    const now = performance.now();
+    const gap = last ? now - last : Infinity;
+    last = now;
+    const dur = gsap.utils.clamp(FLY_MIN, FLY_MAX, (gap / 1000) * PACE);
+
+    // Hurry any cards still in the air so a fast sweep lands roughly in order.
+    const allowed = dur * 0.85;
+    for (const t of flights.values()) {
+      const left = t.duration() - t.time();
+      if (left / t.timeScale() > allowed) t.timeScale(left / allowed);
+    }
+
+    gsap.set(card, { opacity: 1, ...from });
+    const tl = gsap.timeline({ onComplete: () => flights.delete(card) });
+    flights.set(card, tl);
+    tl.to(card, {
+      x: 0,
+      y: 0,
+      scaleX: 1,
+      scaleY: 1,
+      duration: dur,
+      ease: EASE_FLY,
+    });
+  }
+
+  function destroy() {
+    flights.forEach((tl) => tl.kill());
+    flights.clear();
+    cards.forEach((c) => gsap.killTweensOf(c));
+    clones.forEach((c) => c.remove());
+  }
+
+  return { play, destroy };
+}
